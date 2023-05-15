@@ -3,7 +3,6 @@ from ownFuncs.shape import Shape
 import numpy as np
 import cv2
 
-CropImage = False
 
 # load image
 # src = 'data/hue_solved_3.png'
@@ -95,10 +94,7 @@ shapeShower = np.zeros_like(img)
 
 for i, c in enumerate(Colors):
 
-    shapeMask = ShapeMasks[c]
     contours = Contours[c]
-
-    cv2.imshow("shapeMask", shapeMask)
 
     imgC = img.copy()
     cv2.drawContours(imgC, contours, -1, (0, 255, 0), 2)
@@ -118,21 +114,23 @@ for i, c in enumerate(Colors):
     areas = of.arr_format([cv2.contourArea(c) for c in contours], ".0f")
     print(f"num: {i:3}, cnts: {len(contours)}, areas: {areas:12}, color: {c}")
 
-    if not CropImage:
-        if i == len(Colors) - 1:
-            cv2.waitKey(0)
-        elif len(contours) > 2:
-            cv2.waitKey(0)
-        else:
-            cv2.waitKey(1)
+    if i == len(Colors) - 1:
+        cv2.waitKey(1)
+    elif len(contours) > 2:
+        cv2.waitKey(0)
+        print("This should not have happened")
+    else:
+        cv2.waitKey(1)
 
-if CropImage:
-    bb = cv2.cvtColor(collecter, cv2.COLOR_BGR2GRAY)
-    x, y, w, h = cv2.boundingRect(bb)
-    margin = 20
-    print(x, y, w, h)
-    img = img[y-margin:y+h+margin, :, :]
-    newsrc = src.replace('.jpg', '.png')
-    cv2.imwrite(newsrc, img)
+
+for color in Shapes.keys():
+    neighbourChecker = np.copy(collecter)
+    # color = next(iter(Shapes))
+    shape = Shapes[color]
+    shape.findNeighbours(neighbourChecker, Shapes)
+    shape.drawNeighbours(neighbourChecker, color=(0, 255, 0))
+    shape.drawContour(neighbourChecker, color=(255, 0, 0), thickness=3)
+    cv2.imshow("c", neighbourChecker)
+    cv2.waitKey(0)
 
 print('done')
