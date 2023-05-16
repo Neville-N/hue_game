@@ -21,6 +21,10 @@ def scaleImg(img, factor: float = 1., maxWidth: int = 1, maxHeight: int = 1, int
     height = int(height*factor)
     return cv2.resize(img, (width, height), interpolation=interpolation)
 
+def coloursAlongLine(img, A, B):
+    wh = abs(A - B)
+
+
 
 def arr_format(arr, format=" "):
     formatted_arr = [f"{v:{format}}" for v in arr]

@@ -8,6 +8,7 @@ class Shape:
     def __init__(self, contour, mask, color, locked):
         self.contour = contour
         self.color = [int(c) for c in color]
+        self.colorA = np.array(self.color)
         self.locked = locked
         self.neighbours = []
 
@@ -27,19 +28,22 @@ class Shape:
         cv2.drawContours(img, [self.contour], contourIdx=-1,
                          color=color, thickness=thickness)
 
-    def drawCentroid(self, img, size=5):
-        col = (0, 0, 255)
-        if self.locked:
-            col = (0, 255, 0)
+    def drawCentroid(self, img, size=8, col=[0, 0, 255]):
+        if self.locked and col == [0, 0, 255]:
+            col = [0, 255, 0]
         cv2.circle(img, self.center, size, col, -1)
 
     def swap(self, otherShape):
+        if self.locked:
+            print("This shape is not allowed to swap, self")
+        if otherShape.locked:
+            print("This shape is not allowed to swap, other")
         self.color, otherShape.color = otherShape.color, self.color
 
-    def findNeighbours(self, img, shapes: list[Shape], searchRadially=True):
-        range = 10
+    def findNeighbours(self, img, shapes: list[Shape], searchRadially=True, range=10):
         dirs = range * np.array([[-1, 0], [1, 0], [0, -1], [0, 1]], dtype=int)
         found_colors = [self.color, [0, 0, 0]]
+        count_colors = {}
 
         for c in self.contour:
             c = c[0]
@@ -64,3 +68,6 @@ class Shape:
     def drawNeighbours(self, img, color=(0, 255, 0), thickness=3):
         for n in self.neighbours:
             n.drawContour(img, thickness=thickness, color=color)
+
+    def RGB_distance(self, shape: Shape):
+        return np.linalg.norm(self.colorA - shape.colorA)

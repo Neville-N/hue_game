@@ -5,9 +5,8 @@ from ownFuncs.colorspacePlotter import colSpacePlot
 import numpy as np
 
 
-
 # load image
-Npuzzle = 5
+Npuzzle = 1
 # src = f'data/hue_solved_{Npuzzle}.png'
 src = f'data/hue_scrambled_{Npuzzle}.png'
 img = cv2.imread(src)
@@ -36,6 +35,8 @@ freqs = freqs[mask]
 colors = colors[mask]
 
 Shapes = {}
+UnlockedShapes = []
+LockedShapes: list[Shape] = []
 Colors = []
 ShapeMasks = {}
 ShapeLoc = {}
@@ -84,12 +85,25 @@ for i, c in enumerate(colors):
     Contours[cstr] = contours
 
     locked = len(contours) > 1
-    print(locked)
-    Shapes[cstr] = (Shape(outerContour, mask, c, locked))
+    lockedShape = Shape(outerContour, mask, c, locked)
+    Shapes[cstr] = lockedShape
+    if locked:
+        LockedShapes.append(lockedShape)
+    else:
+        UnlockedShapes.append(lockedShape)
 
 
 collecter = np.zeros_like(img)
 shapeShower = np.zeros_like(img)
+
+
+def showShapes():
+    arr = np.zeros_like(img)
+    for s in Shapes.values():
+        s.drawContour(arr)
+        s.drawCentroid(arr)
+    return arr
+
 
 for i, c in enumerate(Colors):
 
@@ -104,9 +118,7 @@ for i, c in enumerate(Colors):
                      1, color=col, thickness=cv2.FILLED)
     # cv2.imshow("collecter", collecter)
 
-    shape = Shapes[c]
-    shape.drawContour(shapeShower)
-    shape.drawCentroid(shapeShower)
+    shapeShower = showShapes()
 
     cv2.imshow("shapeShower", shapeShower)
 
@@ -121,20 +133,80 @@ for i, c in enumerate(Colors):
     else:
         cv2.waitKey(1)
 
+# Notate neighbour relationships
+for color, lockedShape in Shapes.items():
+    lockedShape.findNeighbours(collecter, Shapes, searchRadially=True, range=6)
+
+# Visualize which cells are counted as neighbours
 i = 0
 for color, shape in Shapes.items():
     i += 1
     neighbourChecker = np.copy(collecter)
-    shape.findNeighbours(neighbourChecker, Shapes, searchRadially=False)
     shape.drawNeighbours(neighbourChecker, color=(0, 0, 255), thickness=6)
     shape.drawContour(neighbourChecker, color=(255, 0, 0), thickness=6)
     cv2.imshow("c", neighbourChecker)
     cv2.waitKey(1)
-    # cv2.imwrite(f"data/animation{Npuzzle}b/frame_{i}.png", neighbourChecker)
+    cv2.imwrite(f"data/animation{Npuzzle}/frame_{i}.png", neighbourChecker)
+
+# Run 1 solve loop with strat find suitable neighbour for locked cell
+print("Start swapping?")
+cv2.waitKey(0)
+loopcount = 0
+while len(UnlockedShapes) > 0 and loopcount < 3:
+    loopcount += 1
+    # for lockedShape in LockedShapes:
+    neighbour: Shape
+    for lockedShape in Shapes.values():
+        swappers: list[Shape] = []
+        if not lockedShape.locked:
+            continue
+
+        num_unlocked_neighbours = sum(
+            [n.locked*-1 + 1 for n in lockedShape.neighbours])
+        print(f"color: {color}, has num unlocked neigbours {num_unlocked_neighbours}")
+        if num_unlocked_neighbours != 1:
+            continue
+        for s in lockedShape.neighbours:
+            if s.locked:
+                continue
+            neighbour = s
+
+        minDist = np.inf
+        for swap_shape in UnlockedShapes:
+            rgb_dist = lockedShape.RGB_distance(swap_shape)
+            if rgb_dist < minDist:
+                minDist = rgb_dist
+                closestShape = swap_shape
+        neighbour.swap(closestShape)
+
+        swappers = [neighbour, closestShape]
+
+        neighbour.locked = True
+        LockedShapes.append(neighbour)
+        UnlockedShapes.remove(neighbour)
+
+        print("swap")
+        shapeShower = showShapes()
+        for swapper in swappers:
+            swapper.drawCentroid(shapeShower, size=5, col=(255, 0, 0))
+        cv2.imshow("shapeShower", shapeShower)
+        cv2.waitKey(0)
+
+A = np.array([151, 191, 154])
+B = np.array([172, 196, 148])
+
+C = np.array([155, 227, 164])
+
+AC = np.linalg.norm(A-C)
+BC = np.linalg.norm(B-C)
+
+print(AC, BC)
 
 
+cv2.waitKey(0)
 
-colSpacePlot(Shapes, drawConnections=False)
+
+colSpacePlot(Shapes, drawConnections=1)
 
 
 print('done')
