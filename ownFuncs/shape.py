@@ -8,7 +8,7 @@ class Shape:
     def __init__(self, contour, mask, color, locked):
         self.contour = contour
         self.color = [int(c) for c in color]
-        self.colorA = np.array(self.color)
+        
         self.locked = locked
         self.neighbours = []
 
@@ -19,6 +19,11 @@ class Shape:
         cx = int(M['m10']/M['m00'])
         cy = int(M['m01']/M['m00'])
         self.center = [cx, cy]
+        self.area = cv2.contourArea(contour)
+
+    @property
+    def colorA(self): 
+        return np.array(self.color)
 
     def drawContour(self, img, thickness=0, color=0):
         if thickness == 0:
@@ -33,11 +38,19 @@ class Shape:
             col = [0, 255, 0]
         cv2.circle(img, self.center, size, col, -1)
 
+    def checkSwappable(self, otherShape):
+        areaRatio = self.area/otherShape.area
+        areaCheck = 0.8 < areaRatio and areaRatio < 1.2
+        return areaCheck
+
     def swap(self, otherShape):
         if self.locked:
             print("This shape is not allowed to swap, self")
         if otherShape.locked:
             print("This shape is not allowed to swap, other")
+        areaRatio = self.area/otherShape.area
+        if areaRatio > 1.2 or areaRatio < 0.8:
+            print(f"performing illegal swap, area ratio is {areaRatio}")
         self.color, otherShape.color = otherShape.color, self.color
 
     def findNeighbours(self, img, shapes: list[Shape], searchRadially=True, range=10):
@@ -60,10 +73,15 @@ class Shape:
             for check_dir in check_locations:
                 check_color = img[check_dir[1], check_dir[0]].tolist()
                 if check_color not in found_colors:
-                    # print(f"new color at: {check_dir}")
-                    found_colors.append(check_color)
-                    found_shape = shapes[of.arr_format(check_color, '3')]
-                    self.neighbours.append(found_shape)
+                    if str(check_color) not in count_colors.keys():
+                        count_colors[str(check_color)] = 0
+                    count_colors[str(check_color)] += 1
+
+                    if count_colors[str(check_color)] > 10:
+                        # print(f"new color at: {check_dir}")
+                        found_colors.append(check_color)
+                        found_shape = shapes[of.arr_format(check_color, '3')]
+                        self.neighbours.append(found_shape)
 
     def drawNeighbours(self, img, color=(0, 255, 0), thickness=3):
         for n in self.neighbours:

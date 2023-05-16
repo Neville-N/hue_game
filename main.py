@@ -6,7 +6,7 @@ import numpy as np
 
 
 # load image
-Npuzzle = 1
+Npuzzle = 3
 # src = f'data/hue_solved_{Npuzzle}.png'
 src = f'data/hue_scrambled_{Npuzzle}.png'
 img = cv2.imread(src)
@@ -135,7 +135,7 @@ for i, c in enumerate(Colors):
 
 # Notate neighbour relationships
 for color, lockedShape in Shapes.items():
-    lockedShape.findNeighbours(collecter, Shapes, searchRadially=True, range=6)
+    lockedShape.findNeighbours(collecter, Shapes, searchRadially=False, range=10)
 
 # Visualize which cells are counted as neighbours
 i = 0
@@ -144,14 +144,17 @@ for color, shape in Shapes.items():
     neighbourChecker = np.copy(collecter)
     shape.drawNeighbours(neighbourChecker, color=(0, 0, 255), thickness=6)
     shape.drawContour(neighbourChecker, color=(255, 0, 0), thickness=6)
-    cv2.imshow("c", neighbourChecker)
-    cv2.waitKey(1)
+    # cv2.imshow("c", neighbourChecker)
+    # cv2.waitKey(1)
     cv2.imwrite(f"data/animation{Npuzzle}/frame_{i}.png", neighbourChecker)
 
-# Run 1 solve loop with strat find suitable neighbour for locked cell
 print("Start swapping?")
 cv2.waitKey(0)
+
+
+# strat 1 solve loop with strat find suitable neighbour for locked cell that previously only had 1 unlocked neighbour
 loopcount = 0
+stepcount = 0
 while len(UnlockedShapes) > 0 and loopcount < 3:
     loopcount += 1
     # for lockedShape in LockedShapes:
@@ -163,7 +166,7 @@ while len(UnlockedShapes) > 0 and loopcount < 3:
 
         num_unlocked_neighbours = sum(
             [n.locked*-1 + 1 for n in lockedShape.neighbours])
-        print(f"color: {color}, has num unlocked neigbours {num_unlocked_neighbours}")
+        # print(f"color: {color}, has num unlocked neigbours {num_unlocked_neighbours}")
         if num_unlocked_neighbours != 1:
             continue
         for s in lockedShape.neighbours:
@@ -173,6 +176,8 @@ while len(UnlockedShapes) > 0 and loopcount < 3:
 
         minDist = np.inf
         for swap_shape in UnlockedShapes:
+            if not neighbour.checkSwappable(swap_shape):
+                continue
             rgb_dist = lockedShape.RGB_distance(swap_shape)
             if rgb_dist < minDist:
                 minDist = rgb_dist
@@ -189,18 +194,11 @@ while len(UnlockedShapes) > 0 and loopcount < 3:
         shapeShower = showShapes()
         for swapper in swappers:
             swapper.drawCentroid(shapeShower, size=5, col=(255, 0, 0))
+        cv2.imwrite(f"data/solveanimation{Npuzzle}/step_{stepcount}.png", shapeShower)
+        stepcount += 1
         cv2.imshow("shapeShower", shapeShower)
-        cv2.waitKey(0)
+        cv2.waitKey(1)
 
-A = np.array([151, 191, 154])
-B = np.array([172, 196, 148])
-
-C = np.array([155, 227, 164])
-
-AC = np.linalg.norm(A-C)
-BC = np.linalg.norm(B-C)
-
-print(AC, BC)
 
 
 cv2.waitKey(0)
