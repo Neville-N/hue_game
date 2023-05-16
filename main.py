@@ -1,17 +1,19 @@
 import ownFuncs.funcs as of
 from ownFuncs.shape import Shape
+# from ownFuncs.colorspacePlotter import colSpacePlot
 import numpy as np
+from matplotlib import use as matplotlib_use
+matplotlib_use('TkAgg')
+import matplotlib.pyplot as plt
 import cv2
 
 
 # load image
-# src = 'data/hue_solved_3.png'
-src = 'data/hue_scrambled_3.png'
+Npuzzle = 5
+src = f'data/hue_solved_{Npuzzle}.png'
+# src = f'data/hue_scrambled_{Npuzzle}.png'
 img = cv2.imread(src)
 assert img is not None, "file could not be read, check with os.path.exists()"
-
-# Change color space
-# img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
 # Reduce image size to ease computations
 img = of.scaleImg(img, maxHeight=1000, maxWidth=3000)
@@ -90,8 +92,6 @@ for i, c in enumerate(colors):
 collecter = np.zeros_like(img)
 shapeShower = np.zeros_like(img)
 
-# Shapes['[159, 120, 141]'].swap(Shapes['[141, 168, 148]'])
-
 for i, c in enumerate(Colors):
 
     contours = Contours[c]
@@ -122,15 +122,30 @@ for i, c in enumerate(Colors):
     else:
         cv2.waitKey(1)
 
-
-for color in Shapes.keys():
+i = 0
+for color, shape in Shapes.items():
+    i += 1
     neighbourChecker = np.copy(collecter)
-    # color = next(iter(Shapes))
-    shape = Shapes[color]
     shape.findNeighbours(neighbourChecker, Shapes)
-    shape.drawNeighbours(neighbourChecker, color=(0, 255, 0))
-    shape.drawContour(neighbourChecker, color=(255, 0, 0), thickness=3)
-    cv2.imshow("c", neighbourChecker)
-    cv2.waitKey(0)
+    # shape.drawNeighbours(neighbourChecker, color=(0, 0, 255), thickness=6)
+    # shape.drawContour(neighbourChecker, color=(255, 0, 0), thickness=6)
+    ## cv2.imshow("c", neighbourChecker)
+    # #cv2.waitKey(2)
+    # cv2.imwrite(f"data/animation{Npuzzle}b/frame_{i}.png", neighbourChecker)
+
+
+def colSpacePlot(Shapes):
+    ax = plt.figure().add_subplot(projection='3d')
+    for color, shape in Shapes.items():
+        for neighbour in shape.neighbours:
+            ax.plot([shape.color[0], neighbour.color[0]], [shape.color[1], neighbour.color[1]], [
+                shape.color[2], neighbour.color[2]], color='k')
+        ax.plot(shape.color[0], shape.color[1], shape.color[2],
+                marker='o', color=np.flip(np.array(shape.color)/255.0), alpha=1, ms=20)
+    plt.show()
+
+
+colSpacePlot(Shapes)
+
 
 print('done')

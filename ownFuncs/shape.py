@@ -1,3 +1,4 @@
+from __future__ import annotations
 import numpy as np
 import cv2
 import ownFuncs.funcs as of
@@ -35,24 +36,31 @@ class Shape:
     def swap(self, otherShape):
         self.color, otherShape.color = otherShape.color, self.color
 
-    def findNeighbours(self, img, shapes):
-        range = 10
+    def findNeighbours(self, img, shapes: list[Shape], searchRadially=True):
+        range = 5
         dirs = range * np.array([[-1, 0], [1, 0], [0, -1], [0, 1]], dtype=int)
         found_colors = [self.color, [0, 0, 0]]
-        found_colors_arr = np.array(found_colors)
 
         for c in self.contour:
             c = c[0]
-            check_locations = c + dirs
+
+            if searchRadially:
+                # check radial directions
+                dir = c - self.center
+                check_locations = [
+                    c + np.int64(range / np.linalg.norm(dir) * dir)]
+            else:
+                # check cardinal directions
+                check_locations = c + dirs
+
             for check_dir in check_locations:
                 check_color = img[check_dir[1], check_dir[0]].tolist()
                 if check_color not in found_colors:
-                    # if any(np.equal(found_colors_arr, check_color).all(1)):
-                    print(f"new color at: {check_dir}")
+                    # print(f"new color at: {check_dir}")
                     found_colors.append(check_color)
                     found_shape = shapes[of.arr_format(check_color, '3')]
                     self.neighbours.append(found_shape)
 
-    def drawNeighbours(self, img, color=(0, 255, 0)):
+    def drawNeighbours(self, img, color=(0, 255, 0), thickness=3):
         for n in self.neighbours:
-            n.drawContour(img, thickness=3, color=color)
+            n.drawContour(img, thickness=thickness, color=color)
