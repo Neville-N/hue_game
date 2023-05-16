@@ -37,7 +37,7 @@ class Shape:
         self.color, otherShape.color = otherShape.color, self.color
 
     def findNeighbours(self, img, shapes: list[Shape], searchRadially=True):
-        range = 5
+        range = 10
         dirs = range * np.array([[-1, 0], [1, 0], [0, -1], [0, 1]], dtype=int)
         found_colors = [self.color, [0, 0, 0]]
 

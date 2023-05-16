@@ -1,17 +1,15 @@
+import cv2
 import ownFuncs.funcs as of
 from ownFuncs.shape import Shape
-# from ownFuncs.colorspacePlotter import colSpacePlot
+from ownFuncs.colorspacePlotter import colSpacePlot
 import numpy as np
-from matplotlib import use as matplotlib_use
-matplotlib_use('TkAgg')
-import matplotlib.pyplot as plt
-import cv2
+
 
 
 # load image
 Npuzzle = 5
-src = f'data/hue_solved_{Npuzzle}.png'
-# src = f'data/hue_scrambled_{Npuzzle}.png'
+# src = f'data/hue_solved_{Npuzzle}.png'
+src = f'data/hue_scrambled_{Npuzzle}.png'
 img = cv2.imread(src)
 assert img is not None, "file could not be read, check with os.path.exists()"
 
@@ -86,6 +84,7 @@ for i, c in enumerate(colors):
     Contours[cstr] = contours
 
     locked = len(contours) > 1
+    print(locked)
     Shapes[cstr] = (Shape(outerContour, mask, c, locked))
 
 
@@ -103,7 +102,7 @@ for i, c in enumerate(Colors):
     col = [int(ci) for ci in colors[i]]
     cv2.drawContours(collecter, contours, contourIdx=-
                      1, color=col, thickness=cv2.FILLED)
-    cv2.imshow("collecter", collecter)
+    # cv2.imshow("collecter", collecter)
 
     shape = Shapes[c]
     shape.drawContour(shapeShower)
@@ -112,7 +111,7 @@ for i, c in enumerate(Colors):
     cv2.imshow("shapeShower", shapeShower)
 
     areas = of.arr_format([cv2.contourArea(c) for c in contours], ".0f")
-    print(f"num: {i:3}, cnts: {len(contours)}, areas: {areas:12}, color: {c}")
+    # print(f"num: {i:3}, cnts: {len(contours)}, areas: {areas:12}, color: {c}")
 
     if i == len(Colors) - 1:
         cv2.waitKey(1)
@@ -126,26 +125,16 @@ i = 0
 for color, shape in Shapes.items():
     i += 1
     neighbourChecker = np.copy(collecter)
-    shape.findNeighbours(neighbourChecker, Shapes)
-    # shape.drawNeighbours(neighbourChecker, color=(0, 0, 255), thickness=6)
-    # shape.drawContour(neighbourChecker, color=(255, 0, 0), thickness=6)
-    ## cv2.imshow("c", neighbourChecker)
-    # #cv2.waitKey(2)
+    shape.findNeighbours(neighbourChecker, Shapes, searchRadially=False)
+    shape.drawNeighbours(neighbourChecker, color=(0, 0, 255), thickness=6)
+    shape.drawContour(neighbourChecker, color=(255, 0, 0), thickness=6)
+    cv2.imshow("c", neighbourChecker)
+    cv2.waitKey(1)
     # cv2.imwrite(f"data/animation{Npuzzle}b/frame_{i}.png", neighbourChecker)
 
 
-def colSpacePlot(Shapes):
-    ax = plt.figure().add_subplot(projection='3d')
-    for color, shape in Shapes.items():
-        for neighbour in shape.neighbours:
-            ax.plot([shape.color[0], neighbour.color[0]], [shape.color[1], neighbour.color[1]], [
-                shape.color[2], neighbour.color[2]], color='k')
-        ax.plot(shape.color[0], shape.color[1], shape.color[2],
-                marker='o', color=np.flip(np.array(shape.color)/255.0), alpha=1, ms=20)
-    plt.show()
 
-
-colSpacePlot(Shapes)
+colSpacePlot(Shapes, drawConnections=False)
 
 
 print('done')
