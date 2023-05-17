@@ -24,6 +24,14 @@ class Shape:
         self.area = cv2.contourArea(contour)
 
     @property
+    def centerX(self):
+        return self.center[0]
+
+    @property
+    def centerY(self):
+        return self.center[1]
+
+    @property
     def colorA(self):
         return np.array(self.color)
 
@@ -145,9 +153,11 @@ class Shape:
                 continue
             counted += 1
             dist += shape.RGB_distance(n)
+        if counted == 0:
+            return np.inf
         return dist/counted
 
-    def findBestSwap(self, shapes: list[Shape], distOnlyCheckLocked: bool = True)->Shape:
+    def findBestSwap(self, shapes: list[Shape], distOnlyCheckLocked: bool = True) -> Shape:
         """Finds other shape with color that would be best suited for this shape. 
         Determines fit by calculating average rgb distance to (locked) neighbouring cells
 
