@@ -6,7 +6,8 @@ from typing import List, Final
 
 
 class Shape:
-    def __init__(self, contour: np.ndarray, mask: cv2.Mat, color, locked: bool):
+    def __init__(self, allContours: np.ndarray, contour: np.ndarray, mask: cv2.Mat, color, locked: bool):
+        self.allContours = allContours
         self.contour = contour
         self.color = [int(c) for c in color]
 
@@ -48,7 +49,7 @@ class Shape:
             thickness = cv2.FILLED
         if color == 0:
             color = self.color
-        cv2.drawContours(img, [self.contour], contourIdx=-1,
+        cv2.drawContours(img, self.allContours, contourIdx=-1,
                          color=color, thickness=thickness)
 
     def drawCentroid(self, img, size=8, col=[0, 0, 255]):
@@ -120,7 +121,8 @@ class Shape:
 
                     if count_colors[str(check_color)] > 10:
                         found_colors.append(check_color)
-                        found_shape = shapes[of.arr_format(check_color, '3')]
+                        # found_shape = shapes[of.arr_format(check_color, '3')]
+                        found_shape = next((s for s in shapes if s.color == check_color), None)
                         self.neighbours.append(found_shape)
 
     def drawNeighbours(self, img: cv2.Mat, color=[0, 255, 0], thickness=3):
