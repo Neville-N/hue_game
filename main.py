@@ -1,13 +1,14 @@
 import cv2
 import ownFuncs.funcs as of
 from ownFuncs.shape import Shape
-from ownFuncs.colorspacePlotter import colSpacePlot, surfacePlot
+from ownFuncs.colorspacePlotter import colSpacePlot, surfacePlot, surfacePlot2
 import numpy as np
 import threading
 
 # run settings
-Npuzzle = '1'
+Npuzzle = '2'
 grabSolved = False
+skipSwap = True
 
 # load image
 if grabSolved:
@@ -20,6 +21,7 @@ assert img is not None, "file could not be read, check with os.path.exists()"
 # Reduce image size to ease computations
 img = of.scaleImg(img, maxHeight=1000, maxWidth=3000)
 # img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
+
 
 colors, minFreq = of.collectCollors(img)
 
@@ -60,7 +62,7 @@ for i, c in enumerate(colors):
         continue
 
     maxi = np.argmax(contourAreas)
-    outerContour = contours[maxi]   
+    outerContour = contours[maxi]
 
     locked = len(contours) > 1
     shape = Shape(contours, outerContour, shapeMask, c, locked)
@@ -71,12 +73,13 @@ for i, c in enumerate(colors):
         UnlockedShapes.append(shape)
 
 
-def showShapes(arr, drawCentroid = False):
+def showShapes(arr, drawCentroid=False):
     for s in Shapes:
         s.drawContour(arr)
         if drawCentroid:
             s.drawCentroid(arr)
     return arr
+
 
 collecter = showShapes(np.zeros_like(img))
 shapeShower = showShapes(np.zeros_like(img), True)
@@ -109,7 +112,8 @@ for shape in Shapes:
     shape.drawContour(neighbourChecker, color=(255, 0, 0), thickness=6)
     # cv2.imshow("c", neighbourChecker)
     # cv2.waitKey(1)
-    cv2.imwrite(f"data/neighbourChecker{Npuzzle}/frame_{i}.png", neighbourChecker)
+    cv2.imwrite(
+        f"data/neighbourChecker{Npuzzle}/frame_{i}.png", neighbourChecker)
 
 print("Start swapping?")
 cv2.waitKey(1)
@@ -168,6 +172,7 @@ stepcount = 0
 onlyCheckLocked = True
 stratSteps = 4000
 
+
 while stepcount < stratSteps and loopcount < 1:
     stepcount += 1
     ul = UnlockedShapes[0]
@@ -182,17 +187,14 @@ while stepcount < stratSteps and loopcount < 1:
         print(f"{stepcount} swap")
         shapeShower = showShapes(np.zeros_like(img), True)
         for swapper in swappers:
-            swapper.drawCentroid(shapeShower, size=5, col=(255, 0, 0))
-        cv2.imwrite(
-            f"data/solveanimation{Npuzzle}/step_{stepcount}.png", shapeShower)
-        stepcount += 1
+            swapper.drawCentroid(shapeShower, size=5, col=[255, 0, 0])
+        of.saveImg(
+            shapeShower, f"data/solveanimation{Npuzzle}/", f"step_{stepcount}.png")
         cv2.imshow("shapeShower", shapeShower)
         cv2.waitKey(1)
     else:
         print(f"{stepcount} no swap")
-    if stepcount % 1 == 0:
-        UnlockedShapes.sort(
-            key=lambda x: x.countLockedNeighbours, reverse=True)
+    UnlockedShapes.sort(key=lambda x: x.countLockedNeighbours, reverse=True)
 
     if len(UnlockedShapes) == 0:
         print("new loop")
@@ -211,8 +213,8 @@ cv2.waitKey(0)
 # t2.start()
 # t2.join()
 
-colSpacePlot(Shapes, drawConnections=1)
-surfacePlot(Shapes)
+colSpacePlot(Shapes, drawConnections=True)
+surfacePlot2(Shapes)
 
 
 print('done')

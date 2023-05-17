@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 from ownFuncs.shape import Shape
 import numpy as np
 from matplotlib import use as matplotlib_use
+import matplotlib.tri as mtri
+from mpl_toolkits.mplot3d import Axes3D
 matplotlib_use('TkAgg')
 
 
@@ -28,7 +30,6 @@ def colSpacePlot(Shapes: list[Shape], drawConnections=True, markerSize=20):
     ax.set_xlabel('Red')
     ax.set_ylabel('Green')
     ax.set_zlabel('Blue')
-    set_axes_equal(ax)
 
 
 def surfacePlot(shapes: list[Shape]):
@@ -58,6 +59,45 @@ def surfacePlot(shapes: list[Shape]):
     ax.set_ylabel("Y")
     ax.set_zlabel("blue")
     plt.show()
+
+
+def surfacePlot2(shapes: list[Shape]):
+    X = np.array([s.centerX for s in shapes])
+    Y = np.array([s.centerY for s in shapes])
+    R = np.array([s.color[2] for s in shapes])
+    G = np.array([s.color[1] for s in shapes])
+    B = np.array([s.color[0] for s in shapes])
+
+    triang = mtri.Triangulation(X, Y)
+
+    fig = plt.figure(figsize=(40, 15))
+    # ax = fig.add_subplot(1, 2, 1)
+
+    # ax.triplot(triang_r, c="#D3D3D3", marker='.', markerfacecolor="#DC143C",
+    #            markeredgecolor="black", markersize=10)
+
+    # ax.set_xlabel('X')
+    # ax.set_ylabel('Y')
+    labels = ['R', 'G', 'B']
+    cmaps = ['Reds', 'Greens', 'Blues']
+    for Z, l, cmap, i in zip([R, G, B], labels, cmaps, range(3)):
+        ax = fig.add_subplot(1, 3, i+1, projection='3d')
+
+        ax.plot_trisurf(triang, Z, cmap=cmap)
+        ax.scatter(X, Y, Z, marker='.', s=10, c="black", alpha=0.5)
+        ax.view_init(elev=60, azim=-45)
+
+        for s in shapes:
+            if s.hardLocked:
+                ax.plot(s.centerX, s.centerY,
+                        s.color[2-i], marker='o', markersize=20, color='magenta')
+
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel(l)
+
+    plt.show()
+
 
 def set_axes_equal(ax):
     '''Make axes of 3D plot have equal scale so that spheres appear as spheres,

@@ -37,6 +37,10 @@ class Shape:
         return np.array(self.color)
 
     @property
+    def colorHsv(self):
+        return cv2.cvtColor(np.uint8([[self.color]]), cv2.COLOR_BGR2HSV)[0, 0, :]
+
+    @property
     def countLockedNeighbours(self):
         return sum([n.locked*1 for n in self.neighbours])
 
@@ -122,7 +126,8 @@ class Shape:
                     if count_colors[str(check_color)] > 10:
                         found_colors.append(check_color)
                         # found_shape = shapes[of.arr_format(check_color, '3')]
-                        found_shape = next((s for s in shapes if s.color == check_color), None)
+                        found_shape = next(
+                            (s for s in shapes if s.color == check_color), None)
                         self.neighbours.append(found_shape)
 
     def drawNeighbours(self, img: cv2.Mat, color=[0, 255, 0], thickness=3):
@@ -176,7 +181,7 @@ class Shape:
             if not self.checkSwappable(swap_candidate):
                 continue
             rgb_dist = self.RGB2NeighboursDistance(
-                swap_candidate, onlyCheckLocked=distOnlyCheckLocked)
+                swap_candidate, distOnlyCheckLocked)
             if rgb_dist < minDist:
                 minDist = rgb_dist
                 closestShape = swap_candidate

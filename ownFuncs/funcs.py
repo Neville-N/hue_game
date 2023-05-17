@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-
+import os
 
 def scaleImg(img, factor: float = 1., maxWidth: int = 1, maxHeight: int = 1, interpolation=cv2.INTER_LINEAR):
     width = img.shape[1]
@@ -44,7 +44,10 @@ def collectCollors(img: cv2.Mat):
 def coloursAlongLine(img, A, B):
     wh = abs(A - B)
 
-
+def saveImg(img: cv2.Mat, dir: str, filename: str):
+    if not os.path.isdir(dir):
+        os.makedirs(dir)
+    cv2.imwrite(dir+filename, img)
 
 def arr_format(arr, format=" "):
     formatted_arr = [f"{v:{format}}" for v in arr]
@@ -68,3 +71,5 @@ def arr2_format(arr, format=" "):
             ret += ",\n"
     ret += "]"
     return ret
+
+
