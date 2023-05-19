@@ -4,15 +4,17 @@ from ownFuncs.shape import Shape
 from ownFuncs.shapes import Shapes
 import ownFuncs.colorspacePlotter as plotter
 import numpy as np
+import ownFuncs.solveStrategies as ss
 
 # run settings
-Npuzzle = '1'
+Npuzzle = '5'
 grabSolved = False
-skipSwap = True
+skipSwap = False
 
 # load image
 if grabSolved:
     src = f'data/hue_solved_{Npuzzle}.png'
+    Npuzzle += 's'
 else:
     src = f'data/hue_scrambled_{Npuzzle}.png'
 img = cv2.imread(src)
@@ -28,49 +30,14 @@ shapes = Shapes(img, Npuzzle)
 print("Start swapping?")
 cv2.waitKey(1)
 
+# Pick strategy for solving puzzle
+if not skipSwap:
+    ss.solve2(shapes, Npuzzle)
 
-# strat 2: N times find shape with most locked neighbours and pick color relative to them
-shapes.unlocked.sort(key=lambda x: x.countLockedNeighbours, reverse=True)
-loopcount = 0
-stepcount = 0
-onlyCheckLocked = True
-stratSteps = 4000
-
-
-while stepcount < stratSteps and loopcount < 1:
-    stepcount += 1
-    ul = shapes.unlocked[0]
-    swap_shape = ul.findBestSwap(shapes.unlocked, onlyCheckLocked)
-    if swap_shape:
-        shapes.swapShapes(ul, swap_shape)
-        
-        swappers = [ul, swap_shape]
-        print(f"{stepcount} swap")
-        
-        for swapper in swappers:
-            swapper.drawCentroid(shapes.img, size=5, col=[255, 0, 0])
-        of.saveImg(
-            shapes.img, f"data/solveanimation{Npuzzle}/", f"step_{stepcount}.png")
-        cv2.imshow("shapeShower", shapes.img)
-        cv2.waitKey(1)
-    else:
-        print(f"{stepcount} no swap")
-    shapes.unlocked.sort(key=lambda x: x.countLockedNeighbours, reverse=True)
-
-    if len(shapes.unlocked) == 0:
-        print("new loop")
-        loopcount += 1
-        onlyCheckLocked = False
-        shapes.resetLocks()
-        
-
-
+# Wait with plotting before crashing opencv image window
 cv2.waitKey(0)
 
-# t2 = threading.Thread(target=colSpacePlot, args=(shapes.all, True))
-# t2.start()
-# t2.join()
-
+# Show plots for analyzing results
 plotter.colSpacePlot(shapes.all, drawConnections=True)
 plotter.surfacePlot2(shapes.all)
 

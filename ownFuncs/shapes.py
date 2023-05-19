@@ -5,7 +5,7 @@ import ownFuncs.funcs as of
 
 
 class Shapes:
-    def __init__(self, img: cv2.Mat, puzzleId:int):
+    def __init__(self, img: cv2.Mat, puzzleId: int):
         colors, minFreq = of.collectCollors(img)
 
         self.all: list[Shape] = []
@@ -63,27 +63,37 @@ class Shapes:
             if drawCentroid:
                 s.drawCentroid(self.img)
 
-    def visualizeNeighbours(self):
+    def visualizeNeighbours(self, saveImage=True, drawOnScreen=True):
         """Visualize which cells are counted as neighbours
-        """    
+        """
         i = 0
         for shape in self.all:
             i += 1
             neighbourChecker = np.copy(self.imgref)
-            shape.drawNeighbours(neighbourChecker, color=(0, 0, 255), thickness=6)
+            shape.drawNeighbours(
+                neighbourChecker, color=(0, 0, 255), thickness=6)
             shape.drawContour(neighbourChecker, color=(255, 0, 0), thickness=6)
-            # cv2.imshow("c", neighbourChecker)
-            # cv2.waitKey(1)
-            cv2.imwrite(
-                f"data/neighbourChecker{self.puzzleId}/frame_{i}.png", neighbourChecker)
-            
-    def swapShapes(self, A:Shape, B:Shape):
+            if drawOnScreen:
+                cv2.imshow("c", neighbourChecker)
+                cv2.waitKey(0)
+            if saveImage:
+                folder = f"data/neighbourChecker{self.puzzleId}/"
+                filename = f"frame_{i}.png"
+                of.saveImg(neighbourChecker, folder, filename)
+
+    def swapShapes(self, A: Shape, B: Shape):
         A.swap(B)
         A.locked = True
         self.unlocked.remove(A)
         self.locked.append(A)
         self.updateImg()
         # swappers = [A, B]
+
+    def markSwappedShapes(self, A: Shape, B: Shape):
+        # A.drawCentroid(self.img, size=5, col=[255, 0, 0])
+        # B.drawCentroid(self.img, size=5, col=[255, 0, 0])
+
+        self.img = cv2.arrowedLine(self.img, B.center, A.center, [0, 0, 0], 5)
 
     def resetLocks(self):
         for s in self.all:
