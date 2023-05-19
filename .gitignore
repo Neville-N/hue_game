@@ -160,19 +160,5 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-data/animation1/
-data/animation2/
-data/animation3/
-data/animation4/
-data/animation5/
-data/animation1b/
-data/animation2b/
-data/animation3b/
-data/animation4b/
-data/animation5b/
-data/solveanimation1/
-data/solveanimation2/
-data/solveanimation3/
-data/solveanimation4/
-data/solveanimation5/
-data/
+data/animation*/
+data/solve*/

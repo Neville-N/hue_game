@@ -5,7 +5,7 @@ import ownFuncs.funcs as of
 
 
 class Shapes:
-    def __init__(self, img: cv2.Mat, puzzleId: int):
+    def __init__(self, img: cv2.Mat, puzzleId: str = '_'):
         colors, minFreq = of.collectCollors(img)
 
         self.all: list[Shape] = []

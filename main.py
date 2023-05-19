@@ -7,7 +7,7 @@ import numpy as np
 import ownFuncs.solveStrategies as ss
 
 # run settings
-Npuzzle = '5'
+Npuzzle = '7'
 grabSolved = False
 skipSwap = False
 
