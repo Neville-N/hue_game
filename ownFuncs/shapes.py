@@ -11,6 +11,7 @@ class Shapes:
         self.all: list[Shape] = []
         self.unlocked: list[Shape] = []
         self.locked: list[Shape] = []
+        self.close_to_estimate: list[Shape] = []
         self.imgref = img
         self.img = np.zeros_like(img)
 
@@ -56,6 +57,10 @@ class Shapes:
             shape.findNeighbours(
                 self.img, self.all, searchRadially=False, range=10)
 
+    @property
+    def average_estimation_error(self):
+        return sum([s.distToEstimation for s in self.all])/len(self.all)
+
     def updateImg(self, drawCentroid=True):
         self.img = np.zeros_like(self.imgref)
         for s in self.all:
@@ -87,19 +92,18 @@ class Shapes:
         self.unlocked.remove(A)
         self.locked.append(A)
         self.updateImg()
-        # swappers = [A, B]
 
     def markSwappedShapes(self, A: Shape, B: Shape):
-        # A.drawCentroid(self.img, size=5, col=[255, 0, 0])
-        # B.drawCentroid(self.img, size=5, col=[255, 0, 0])
-
         self.img = cv2.arrowedLine(self.img, B.center, A.center, [0, 0, 0], 5)
 
     def resetLocks(self):
         for s in self.all:
             s.locked = s.hardLocked
-            if not s.locked:
+            if s.hardLocked:
+                continue
+            if s in self.locked:
                 self.locked.remove(s)
+            if s not in self.unlocked:
                 self.unlocked.append(s)
 
     def findShapeClosestToColor(self, BGR: np.ndarray, shape: Shape = None) -> Shape:
@@ -113,4 +117,4 @@ class Shapes:
                     continue
             mindist = dist
             closestShape = s
-        return closestShape
+        return closestShape, mindist

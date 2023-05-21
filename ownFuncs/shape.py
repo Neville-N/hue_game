@@ -66,7 +66,7 @@ class Shape:
             col = [0, 255, 0]
         cv2.circle(img, self.center, size, col, -1)
 
-    def checkSwappable(self, otherShape: Shape) -> bool:
+    def checkSwappable(self, otherShape: Shape, verbose:bool=False) -> bool:
         """Determines if a swap is allowable between self and otherShape
 
         Args:
@@ -77,6 +77,8 @@ class Shape:
         """
         areaRatio = self.area/otherShape.area
         areaCheck = 0.8 < areaRatio and areaRatio < 1.2
+        if verbose and not areaCheck:
+            print(f"performing illegal swap, area ratio is {areaRatio}")
         return areaCheck
 
     def swap(self, otherShape: Shape):
@@ -89,10 +91,8 @@ class Shape:
             print("This shape is not allowed to swap, self")
         if otherShape.locked:
             print("This shape is not allowed to swap, other")
-        areaRatio = self.area/otherShape.area
-        if areaRatio > 1.2 or areaRatio < 0.8:
-            print(f"performing illegal swap, area ratio is {areaRatio}")
-
+        self.checkSwappable(otherShape)
+            
         self.color, otherShape.color = otherShape.color, self.color
 
     def findNeighbours(self, img: cv2.Mat, shapes: List[Shape], searchRadially: bool = True, range: int = 10):
@@ -207,3 +207,6 @@ class Shape:
         if closestShape is None:
             print("No closestshape found")
         return closestShape
+
+    def same_as(self, other: Shape) -> bool:
+        return np.all(np.equal(self.colorA, other.colorA))

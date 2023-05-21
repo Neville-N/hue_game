@@ -9,11 +9,10 @@ from matplotlib import use as matplotlib_use
 import ownFuncs.funcs as of
 import ownFuncs.optimizationFuncs as opt
 from ownFuncs.shapes import Shapes
+from ownFuncs.shape import Shape
 
 matplotlib_use('TkAgg')
 
-
-# PUZZLE_ID: Final = '1'
 
 def optimization_strat(PUZZLE_ID: str, show_plot: bool):
     src = f'data/hue_scrambled_{PUZZLE_ID}.png'
@@ -29,14 +28,11 @@ def optimization_strat(PUZZLE_ID: str, show_plot: bool):
     datas, MGs, Cs = opt.fitSurface(shapes, order)
     opt.setShapeColorEstimations(shapes, Cs, order)
 
-    XYB = []
-    XYG = []
-    XYR = []
     stepcount: int = -1
     num_free_shapes = len(shapes.unlocked)
     remaining_color_est_error = 0
 
-    while len(shapes.unlocked) > 0:
+    while len(shapes.unlocked) > 1:
         stepcount += 1
         shape = max(shapes.unlocked, key=lambda s: s.distToEstimation)
         BGR = opt.color_at_xy(Cs, shape.centerX, shape.centerY, order)
@@ -46,13 +42,10 @@ def optimization_strat(PUZZLE_ID: str, show_plot: bool):
         if not np.all(np.equal(shape.colorA, closestShape.colorA)):
             shapes.markSwappedShapes(shape, closestShape)
             of.saveImg(
-                shapes.img, f"data/solveanimation{PUZZLE_ID}/", f"step_{stepcount}.png")
-
-        XYB.append([shape.centerX, shape.centerY, shape.color[0]])
-        XYG.append([shape.centerX, shape.centerY, shape.color[1]])
-        XYR.append([shape.centerX, shape.centerY, shape.color[2]])
+                shapes.img, f"data/solveanimation/P{PUZZLE_ID}/", f"step_{stepcount}.png")
     print(
         f"1st avg remaining color error: {remaining_color_est_error/num_free_shapes:.5g}")
+    XYB, XYG, XYR = opt.get_datas(shapes)
     datas2 = np.array([XYB, XYG, XYR])
 
     if show_plot:
@@ -62,44 +55,44 @@ def optimization_strat(PUZZLE_ID: str, show_plot: bool):
     somethingChanged = True
     limit = 0
 
-    while somethingChanged and limit < 20:
-        remaining_color_est_error = 0
-        limit += 1
+    avg_est_error = shapes.average_estimation_error
+    # somethingChanged and
+    while limit < 100 and avg_est_error > 1.6:
+        if limit % 10 == 0 or len(shapes.unlocked) == 0 or not somethingChanged:
+            shapes.resetLocks()
+            opt.setShapeColorEstimations(shapes, Cs, order)
+            _, MGs, Cs = opt.fitSurface(shapes, order, False)
+            opt.setShapeColorEstimations(shapes, Cs, order)
+            print(f"{'-'*20} refit {'-'*20}")
+
         somethingChanged = False
-        shapes.resetLocks()
-        _, MGs, Cs = opt.fitSurface(shapes, order, False)
-        opt.setShapeColorEstimations(shapes, Cs, order)
+        limit += 1
+        stepcount += 1
 
-        XYB = []
-        XYG = []
-        XYR = []
-        while len(shapes.unlocked) > 0:
-            shape = max(shapes.unlocked, key=lambda s: s.distToEstimation)
-            stepcount += 1
-            BGR = opt.color_at_xy(Cs, shape.centerX, shape.centerY, order)
-            closestShape, err = shapes.findShapeClosestToColor(BGR, shape)
-            remaining_color_est_error += err
-            shapes.swapShapes(shape, closestShape)
-            shapes.markSwappedShapes(shape, closestShape)
+        shape = opt.get_largest_error_shape(shapes.unlocked)
+        BGR = opt.color_at_xy(Cs, shape.centerX, shape.centerY, order)
+        closestShape, err = shapes.findShapeClosestToColor(BGR, shape)
+        shapes.swapShapes(shape, closestShape)
+        shapes.markSwappedShapes(shape, closestShape)
 
-            # Check if shape has swapped with itself
-            if not np.all(np.equal(shape.colorA, closestShape.colorA)):
-                somethingChanged = True
-                of.saveImg(
-                    shapes.img, f"data/solveanimation{PUZZLE_ID}/", f"step_{stepcount}.png")
+        # Check if shape has swapped with itself
+        if not shape.same_as(closestShape):
+            somethingChanged = True
+            of.saveImg(
+                shapes.img, f"data/solveanimation/P{PUZZLE_ID}/", f"step_{stepcount}.png")
 
-            XYB.append([shape.centerX, shape.centerY, shape.color[0]])
-            XYG.append([shape.centerX, shape.centerY, shape.color[1]])
-            XYR.append([shape.centerX, shape.centerY, shape.color[2]])
+        avg_est_error = shapes.average_estimation_error
 
         print(
-            f"Average remaining color error: {remaining_color_est_error/num_free_shapes:.5g}")
+            f"Average remaining color error: {avg_est_error:.5g}")
         if somethingChanged and show_plot:
+            XYB, XYG, XYR = opt.get_datas(shapes)
             datas2 = np.array([XYB, XYG, XYR])
             opt.plotSurfaces(datas, MGs, datas2)
 
+    shapes.updateImg(False)
     of.saveImg(
-        shapes.img, f"data/solveanimation{PUZZLE_ID}/", f"step_{stepcount}.png")
+        shapes.img, f"data/solveanimation/P{PUZZLE_ID}/", f"step_{stepcount}.png")
 
     print(f"P{PUZZLE_ID} Ran order two loop for {limit} times")
 
@@ -114,3 +107,5 @@ ids.insert(0, '000')
 for id in ids:
     optimization_strat(id, False)
     print('\n')
+
+# optimization_strat('14', False)
