@@ -60,8 +60,8 @@ def optimization_strat(PUZZLE_ID: str, show_plot: bool):
     while limit < 100 and avg_est_error > 1.6:
         if limit % 10 == 0 or len(shapes.unlocked) == 0 or not somethingChanged:
             shapes.resetLocks()
-            opt.setShapeColorEstimations(shapes, Cs, order)
-            _, MGs, Cs = opt.fitSurface(shapes, order, False)
+            opt.determine_close_to_estimate(shapes)
+            datas2, MGs, Cs = opt.fitSurface(shapes, order, False)
             opt.setShapeColorEstimations(shapes, Cs, order)
             print(f"{'-'*20} refit {'-'*20}")
 

@@ -103,7 +103,8 @@ def fitSurface(shapes: Shapes, order: int, useLocked: bool = True) -> Tuple[list
     if useLocked:
         shapeList = shapes.locked
     else:
-        shapeList = shapes.all
+        # shapeList = shapes.all
+        shapeList = shapes.close_to_estimate
 
     XYR = np.array([[s.centerX, s.centerY, s.color[2]] for s in shapeList])
     XYG = np.array([[s.centerX, s.centerY, s.color[1]] for s in shapeList])
@@ -116,11 +117,14 @@ def fitSurface(shapes: Shapes, order: int, useLocked: bool = True) -> Tuple[list
 
 
 def setShapeColorEstimations(shapes: Shapes, Cs: npt.NDArray, order: int):
-    shapes.close_to_estimate.clear()
     for shape in shapes.all:
         shape.colorEst = color_at_xy(Cs, shape.centerX, shape.centerY, order)
-        # if shape.distToEstimation < 5:
-        #     shapes.close_to_estimate.append(shape)
+
+def determine_close_to_estimate(shapes: Shapes):
+    shapes.close_to_estimate.clear()
+    for shape in shapes.all:
+        if shape.distToEstimation < 5:
+            shapes.close_to_estimate.append(shape)
 
 
 def get_datas(shapes: Shapes):
