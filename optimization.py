@@ -110,8 +110,7 @@ def setShapeColorEstimations(shapes: Shapes, Cs: np.ndarray, order: int):
                                                  np.array([shape.centerY]), order) for C in Cs]).flatten().astype(np.uint8)
 
 
-# 14 fails
-Npuzzle = '13'
+Npuzzle = '15'
 src = f'data/hue_scrambled_{Npuzzle}.png'
 # src = f'data/hue_solved_{Npuzzle}.png'
 img = cv2.imread(src)
@@ -129,6 +128,7 @@ XYB = []
 XYG = []
 XYR = []
 stepcount = -1
+
 while len(shapes.unlocked) > 0:
     # shapes.unlocked.sort(key=lambda x: x.countLockedNeighbours, reverse=True)
     # shapes.unlocked.sort(key=lambda s: s.neighboursDistance(), reverse=True)
@@ -137,13 +137,13 @@ while len(shapes.unlocked) > 0:
     stepcount += 1
     BGR = np.array([TransformFunc(C, np.array([shape.centerX]),
                                   np.array([shape.centerY]), order) for C in Cs]).flatten().astype(np.uint8)
-    print(f"Old color: {shape.colorA}")
-    print(f"New color: {BGR}")
     closestShape = shapes.findShapeClosestToColor(BGR, shape)
-    print(f"closest c: {closestShape.colorA}\n")
+    # print(f"Old color: {shape.colorA}")
+    # print(f"New color: {BGR}")
+    # print(f"closest c: {closestShape.colorA}\n")
     shapes.swapShapes(shape, closestShape)
-    shapes.markSwappedShapes(shape, closestShape)
     if not np.all(np.equal(shape.colorA, closestShape.colorA)):
+        shapes.markSwappedShapes(shape, closestShape)
         of.saveImg(
             shapes.img, f"data/solveanimation{Npuzzle}/", f"step_{stepcount}.png")
 
@@ -157,40 +157,47 @@ plotSurfaces(datas, MGs, datas2)
 
 order = 2
 somethingChanged = True
+limit = 0
+while somethingChanged and limit < 20:
+    limit += 1
+    somethingChanged = False
+    _, MGs, Cs = fitSurface(shapes, order)
+    shapes.resetLocks()
+    setShapeColorEstimations(shapes, Cs, order)
 
-_, MGs, Cs = fitSurface(shapes, order)
-shapes.resetLocks()
-setShapeColorEstimations(shapes, Cs, order)
+    XYB = []
+    XYG = []
+    XYR = []
+    while len(shapes.unlocked) > 0:
+        # shapes.unlocked.sort(key=lambda x: x.countLockedNeighbours, reverse=True)
+        # shapes.unlocked.sort(key=lambda s: s.neighboursDistance(), reverse=True)
+        shapes.unlocked.sort(key=lambda s: s.distToEstimation, reverse=True)
+        shape = shapes.unlocked[0]
+        stepcount += 1
+        BGR = np.array([TransformFunc(C, np.array([shape.centerX]),
+                                      np.array([shape.centerY]), order) for C in Cs]).flatten().astype(np.uint8)
+        closestShape = shapes.findShapeClosestToColor(BGR, shape)
+        # print(f"Old color         : {shape.colorA}")
+        # print(f"Surface est. color: {BGR}")
+        # print(f"closest color     : {closestShape.colorA}\n")
+        shapes.swapShapes(shape, closestShape)
+        shapes.markSwappedShapes(shape, closestShape)
+        if not np.all(np.equal(shape.colorA, closestShape.colorA)):
+            somethingChanged = True
+            of.saveImg(
+                shapes.img, f"data/solveanimation{Npuzzle}/", f"step_{stepcount}.png")
 
-XYB = []
-XYG = []
-XYR = []
-while len(shapes.unlocked) > 0:
-    # shapes.unlocked.sort(key=lambda x: x.countLockedNeighbours, reverse=True)
-    # shapes.unlocked.sort(key=lambda s: s.neighboursDistance(), reverse=True)
-    shapes.unlocked.sort(key=lambda s: s.distToEstimation, reverse=True)
-    shape = shapes.unlocked[0]
-    stepcount += 1
-    BGR = np.array([TransformFunc(C, np.array([shape.centerX]),
-                                  np.array([shape.centerY]), order) for C in Cs]).flatten().astype(np.uint8)
-    closestShape = shapes.findShapeClosestToColor(BGR, shape)
-    print(f"Old color         : {shape.colorA}")
-    print(f"Surface est. color: {BGR}")
-    print(f"closest color     : {closestShape.colorA}\n")
-    shapes.swapShapes(shape, closestShape)
-    shapes.markSwappedShapes(shape, closestShape)
-    if not np.all(np.equal(shape.colorA, closestShape.colorA)):
-        of.saveImg(
-            shapes.img, f"data/solveanimation{Npuzzle}/", f"step_{stepcount}.png")
-
-    XYB.append([shape.centerX, shape.centerY, shape.color[0]])
-    XYG.append([shape.centerX, shape.centerY, shape.color[1]])
-    XYR.append([shape.centerX, shape.centerY, shape.color[2]])
+        XYB.append([shape.centerX, shape.centerY, shape.color[0]])
+        XYG.append([shape.centerX, shape.centerY, shape.color[1]])
+        XYR.append([shape.centerX, shape.centerY, shape.color[2]])
+    datas2 = np.array([XYB, XYG, XYR])
+    plotSurfaces(datas, MGs, datas2)
 
 of.saveImg(
     shapes.img, f"data/solveanimation{Npuzzle}/", f"step_{stepcount}.png")
 
-datas2 = np.array([XYB, XYG, XYR])
-plotSurfaces(datas, MGs, datas2)
+print(f"P{Npuzzle} Ran order two loop for {limit} times")
+# datas2 = np.array([XYB, XYG, XYR])
+# plotSurfaces(datas, MGs, datas2)
 
 plt.show()
