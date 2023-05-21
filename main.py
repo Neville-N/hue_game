@@ -7,7 +7,7 @@ import numpy as np
 import ownFuncs.solveStrategies as ss
 
 # run settings
-Npuzzle = '7'
+Npuzzle = '15'
 grabSolved = False
 skipSwap = False
 
@@ -22,8 +22,6 @@ assert img is not None, "file could not be read, check with os.path.exists()"
 
 # Reduce image size to ease computations
 img = of.scaleImg(img, maxHeight=1000, maxWidth=3000)
-# img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
-
 
 shapes = Shapes(img, Npuzzle)
 
@@ -35,6 +33,7 @@ if not skipSwap:
     ss.solve2(shapes, Npuzzle)
 
 # Wait with plotting before crashing opencv image window
+print("Draw plots? opencv window will stop reacting.")
 cv2.waitKey(0)
 
 # Show plots for analyzing results

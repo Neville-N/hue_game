@@ -9,10 +9,11 @@ def solve2(shapes: Shapes, Npuzzle: int):
     loopcount = 0
     stepcount = 0
     onlyCheckLocked = True
-    stratSteps = 100
+    stratSteps = 200
 
 
-    while stepcount < stratSteps and loopcount < 1:
+    # while stepcount < stratSteps and loopcount < 1:
+    while len(shapes.unlocked) >  1:
         stepcount += 1
         current_shape = shapes.unlocked[0]
         swap_shape = current_shape.findBestSwap(shapes.unlocked, onlyCheckLocked)
