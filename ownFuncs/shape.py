@@ -141,7 +141,7 @@ class Shape:
         for n in self.neighbours:
             n.drawContour(img, thickness=thickness, color=color)
 
-    def RGB_distance(self, shape: Shape) -> float:
+    def RGB_distance(self, shape: Shape, colorA: np.ndarray = None) -> float:
         """Calculates euclidiean rgb distance between self and shape.
 
         Args:
@@ -150,6 +150,8 @@ class Shape:
         Returns:
             float: Euclidean rgb distance
         """
+        if colorA is not None:
+            return np.linalg.norm(self.colorA - colorA)
         return np.linalg.norm(self.colorA - shape.colorA)
 
     def RGB2NeighboursDistance(self, shape: Shape, onlyCheckLocked: bool = True):

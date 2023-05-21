@@ -101,3 +101,18 @@ class Shapes:
             if not s.locked:
                 self.locked.remove(s)
                 self.unlocked.append(s)
+    
+    def findShapeClosestToColor(self, BGR: np.ndarray, shape: Shape=None)-> Shape:
+        mindist = np.inf
+        for s in self.unlocked:
+            dist = s.RGB_distance(None, BGR)
+            if dist > mindist:
+                continue
+            if shape is not None:
+                if not shape.checkSwappable(s):
+                    continue
+            mindist = dist
+            closestShape = s
+        return closestShape
+
+

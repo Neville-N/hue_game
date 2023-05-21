@@ -30,7 +30,7 @@ cv2.waitKey(1)
 
 # Pick strategy for solving puzzle
 if not skipSwap:
-    ss.solve2(shapes, Npuzzle)
+    ss.solve3(shapes, Npuzzle)
 
 # Wait with plotting before crashing opencv image window
 print("Draw plots? opencv window will stop reacting.")

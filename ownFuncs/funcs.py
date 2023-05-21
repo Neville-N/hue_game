@@ -41,9 +41,6 @@ def collectCollors(img: cv2.Mat):
     colors = colors[mask]
     return colors, minFreq
 
-def coloursAlongLine(img, A, B):
-    wh = abs(A - B)
-
 def saveImg(img: cv2.Mat, dir: str, filename: str):
     if not os.path.isdir(dir):
         os.makedirs(dir)
