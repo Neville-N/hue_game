@@ -23,6 +23,7 @@ class Shape:
         cy = int(M['m01']/M['m00'])
         self.center = [cx, cy]
         self.area = cv2.contourArea(contour)
+        self.colorEst = np.zeros(3)
 
     @property
     def centerX(self):
@@ -47,6 +48,10 @@ class Shape:
     @property
     def countUnlockedNeighbours(self):
         return len(self.neighbours) - self.countLockedNeighbours
+
+    @property
+    def distToEstimation(self) -> float:
+        return np.linalg.norm(self.colorA - self.colorEst)
 
     def drawContour(self, img: cv2.Mat, thickness: int = 0, color=0):
         if thickness == 0:
@@ -164,6 +169,18 @@ class Shape:
             dist += shape.RGB_distance(n)
         if counted == 0:
             return np.inf
+        return dist/counted
+
+    def neighboursDistance(self, onlyCheckLocked: bool = False):
+        dist = 0
+        counted = 0
+        for n in self.neighbours:
+            if onlyCheckLocked and not n.locked:
+                continue
+            counted += 1
+            dist += self.RGB_distance(n)
+        if counted == 0:
+            return 0
         return dist/counted
 
     def findBestSwap(self, shapes: list[Shape], distOnlyCheckLocked: bool = True) -> Shape:
