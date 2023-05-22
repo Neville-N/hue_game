@@ -20,7 +20,7 @@ for src in jpgs:
 
     bb = cv2.cvtColor(shapes.img, cv2.COLOR_BGR2GRAY)
     x, y, w, h = cv2.boundingRect(bb)
-    margin = 20
     print(x, y, w, h)
+    margin = 20
     img = img[y-margin:y+h+margin, :, :]
     cv2.imwrite(newsrc, img)
