@@ -99,13 +99,14 @@ def optimization_strat(PUZZLE_ID: str, show_plot: bool):
     if show_plot:
         plt.show()
 
+    opt.plotSurfaces(datas, MGs, datas2)
+    plt.show()
 
-ids = [str(i) for i in range(16)]
-ids.insert(0, '00')
-ids.insert(0, '000')
+
+ids = [str(i) for i in range(15, 22)]
 
 for id in ids:
     optimization_strat(id, False)
     print('\n')
 
-# optimization_strat('14', False)
+# optimization_strat('temp', False)

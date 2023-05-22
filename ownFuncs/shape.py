@@ -52,6 +52,10 @@ class Shape:
     @property
     def distToEstimation(self) -> float:
         return np.linalg.norm(self.colorA - self.colorEst)
+    
+    @property
+    def dim1(self) -> int:
+        return self.centerY + 1000*self.centerX
 
     def drawContour(self, img: cv2.Mat, thickness: int = 0, color=0):
         if thickness == 0:
