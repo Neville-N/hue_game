@@ -6,12 +6,13 @@ import numpy as np
 import numpy.typing as npt
 import scipy
 
-import ownFuncs.funcs as of
 from ownFuncs.shape import Shape
 from ownFuncs.shapes import Shapes
 
 
-def TransformFunc(C: npt.NDArray, XX: npt.NDArray, YY: npt.NDArray, order: int) -> npt.NDArray:
+def TransformFunc(
+    C: npt.NDArray, XX: npt.NDArray, YY: npt.NDArray, order: int
+) -> npt.NDArray:
     """Transforms XY coordinates to color values according to transform matrix C
 
     Args:
@@ -31,7 +32,7 @@ def find_transform_matrix(data: npt.NDArray, order: int) -> npt.NDArray:
     """Finds the matrix C that can be used to convert a XY coordinate to a Color value
 
     Args:
-        data (npt.NDArray): Sample points 
+        data (npt.NDArray): Sample points
 
     Returns:
         npt.NDArray: C matrix
@@ -39,28 +40,36 @@ def find_transform_matrix(data: npt.NDArray, order: int) -> npt.NDArray:
     if order == 1:
         A = np.c_[data[:, 0], data[:, 1], np.ones(data.shape[0])]
     else:
-        A = np.c_[np.ones(data.shape[0]), data[:, :2], np.prod(
-            data[:, :2], axis=1), data[:, :2]**2]
+        A = np.c_[
+            np.ones(data.shape[0]),
+            data[:, :2],
+            np.prod(data[:, :2], axis=1),
+            data[:, :2] ** 2,
+        ]
 
     C, _, _, _ = scipy.linalg.lstsq(A, data[:, 2])
     return C
 
 
 def color_at_xy(Cs, x: int, y: int, order: int) -> npt.NDArray[np.uint8]:
-    return np.array([TransformFunc(C, np.array([x]),
-                                   np.array([y]), order)
-                     for C in Cs]).flatten().astype(np.uint8)
+    return (
+        np.array([TransformFunc(C, np.array([x]), np.array([y]), order) for C in Cs])
+        .flatten()
+        .astype(np.uint8)
+    )
 
 
-def get_mesh_grids(datas, Cs, order: int) -> Tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
+def get_mesh_grids(
+    datas, Cs, order: int
+) -> Tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
     # regular grid covering the domain of the data
     N = 16
     data = datas[0]
     X = data[:, 0]
     Y = data[:, 1]
     X_MG, Y_MG = np.meshgrid(
-        np.linspace(min(X)-100, max(X)+100, N),
-        np.linspace(min(Y)-100, max(Y)+100, N)
+        np.linspace(min(X) - 100, max(X) + 100, N),
+        np.linspace(min(Y) - 100, max(Y) + 100, N),
     )
 
     XX = X_MG.flatten()
@@ -72,7 +81,7 @@ def get_mesh_grids(datas, Cs, order: int) -> Tuple[npt.NDArray, npt.NDArray, npt
 
 
 def plotSurfaces(datas, MGs, datas2=None) -> None:
-    colors = ['blue', 'green', 'red']
+    colors = ["blue", "green", "red"]
     X_MG = MGs[0]
     Y_MG = MGs[1]
     Z_MGs = MGs[2]
@@ -82,24 +91,26 @@ def plotSurfaces(datas, MGs, datas2=None) -> None:
         data = datas[i]
         Z_MG = Z_MGs[i]
 
-        ax = fig.add_subplot(2, 3, i+1, projection='3d')
+        ax = fig.add_subplot(2, 3, i + 1, projection="3d")
         ax.plot_surface(X_MG, Y_MG, Z_MG, rstride=1, cstride=1, alpha=0.2)
         ax.scatter(data[:, 0], data[:, 1], data[:, 2], c=colors[i], s=50)
         if datas2 is not None:
             data2 = datas2[i]
-            ax.scatter(data2[:, 0], data2[:, 1], data2[:, 2], c='k', s=50)
+            ax.scatter(data2[:, 0], data2[:, 1], data2[:, 2], c="k", s=50)
         ax.set_xlabel("X")
         ax.set_ylabel("Y")
         ax.set_zlabel(colors[i])
-        ax.axis('equal')
-        ax.axis('tight')
+        ax.axis("equal")
+        ax.axis("tight")
         ax.set_zlim((0, 255))
 
-        ax = fig.add_subplot(2, 3, i+1+3)
+        ax = fig.add_subplot(2, 3, i + 1 + 3)
         ax.contourf(X_MG, Y_MG, Z_MG)
 
 
-def fitSurface(shapes: Shapes, order: int, useLocked: bool = True) -> Tuple[list[npt.NDArray], npt.NDArray, npt.NDArray]:
+def fitSurface(
+    shapes: Shapes, order: int, useLocked: bool = True
+) -> Tuple[list[npt.NDArray], npt.NDArray, npt.NDArray]:
     if useLocked:
         shapeList = shapes.locked
     else:
@@ -120,6 +131,7 @@ def setShapeColorEstimations(shapes: Shapes, Cs: npt.NDArray, order: int):
     for shape in shapes.all:
         shape.colorEst = color_at_xy(Cs, shape.centerX, shape.centerY, order)
 
+
 def determine_close_to_estimate(shapes: Shapes):
     shapes.close_to_estimate.clear()
     for shape in shapes.all:
@@ -132,6 +144,7 @@ def get_datas(shapes: Shapes):
     XYG = [[shape.centerX, shape.centerY, shape.color[1]] for shape in shapes.all]
     XYR = [[shape.centerX, shape.centerY, shape.color[2]] for shape in shapes.all]
     return XYB, XYG, XYR
-    
-def get_largest_error_shape(shapes: list[Shapes]) -> Shape:
+
+
+def get_largest_error_shape(shapes: list[Shape]) -> Shape:
     return max(shapes, key=lambda s: s.distToEstimation)

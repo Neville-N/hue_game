@@ -4,32 +4,50 @@ import numpy as np
 from matplotlib import use as matplotlib_use
 import matplotlib.tri as mtri
 from mpl_toolkits.mplot3d import Axes3D
-matplotlib_use('TkAgg')
+
+matplotlib_use("TkAgg")
 
 
 def colSpacePlot(Shapes: list[Shape], drawConnections=True, markerSize=20):
-    ax = plt.figure(figsize=(10, 10)).add_subplot(projection='3d')
+    ax = plt.figure(figsize=(10, 10)).add_subplot(projection="3d")
     for shape in Shapes:
-
         # Draw connecting lines
         if drawConnections:
             for neighbour in shape.neighbours:
-                ax.plot([shape.color[2], neighbour.color[2]],
-                        [shape.color[1], neighbour.color[1]],
-                        [shape.color[0], neighbour.color[0]], color='k', alpha=.5)
+                ax.plot(
+                    [shape.color[2], neighbour.color[2]],
+                    [shape.color[1], neighbour.color[1]],
+                    [shape.color[0], neighbour.color[0]],
+                    color="k",
+                    alpha=0.5,
+                )
 
         # Draw dots for each shape
-        ax.plot(shape.color[2], shape.color[1], shape.color[0],
-                marker='o', color=np.flip(np.array(shape.color)/255.0), alpha=1, ms=markerSize)
+        ax.plot(
+            shape.color[2],
+            shape.color[1],
+            shape.color[0],
+            marker="o",
+            color=np.flip(np.array(shape.color) / 255.0),
+            alpha=1,
+            ms=markerSize,
+        )
 
         # Mark locked shapes
         if shape.locked:
-            ax.plot(shape.color[2], shape.color[1], shape.color[0],
-                    marker='x', color='black', alpha=1, ms=markerSize/2)
+            ax.plot(
+                shape.color[2],
+                shape.color[1],
+                shape.color[0],
+                marker="x",
+                color="black",
+                alpha=1,
+                ms=markerSize / 2,
+            )
 
-    ax.set_xlabel('Red')
-    ax.set_ylabel('Green')
-    ax.set_zlabel('Blue')
+    ax.set_xlabel("Red")
+    ax.set_ylabel("Green")
+    ax.set_zlabel("Blue")
 
 
 def surfacePlot(shapes: list[Shape]):
@@ -41,19 +59,19 @@ def surfacePlot(shapes: list[Shape]):
 
     fig = plt.figure(figsize=plt.figaspect(0.3))
 
-    ax = fig.add_subplot(1, 3, 1, projection='3d')
+    ax = fig.add_subplot(1, 3, 1, projection="3d")
     ax.scatter(X, Y, R, color="red")
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
     ax.set_zlabel("red")
 
-    ax = fig.add_subplot(1, 3, 2, projection='3d')
+    ax = fig.add_subplot(1, 3, 2, projection="3d")
     ax.scatter(X, Y, G, color="green")
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
     ax.set_zlabel("green")
 
-    ax = fig.add_subplot(1, 3, 3, projection='3d')
+    ax = fig.add_subplot(1, 3, 3, projection="3d")
     ax.scatter(X, Y, B, color="blue")
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
@@ -78,35 +96,41 @@ def surfacePlot2(shapes: list[Shape]):
 
     # ax.set_xlabel('X')
     # ax.set_ylabel('Y')
-    labels = ['R', 'G', 'B']
-    cmaps = ['Reds', 'Greens', 'Blues']
+    labels = ["R", "G", "B"]
+    cmaps = ["Reds", "Greens", "Blues"]
     for Z, l, cmap, i in zip([R, G, B], labels, cmaps, range(3)):
-        ax = fig.add_subplot(1, 3, i+1, projection='3d')
+        ax = fig.add_subplot(1, 3, i + 1, projection="3d")
 
         ax.plot_trisurf(triang, Z, cmap=cmap)
-        ax.scatter(X, Y, Z, marker='.', s=10, c="black", alpha=0.5)
+        ax.scatter(X, Y, Z, marker=".", s=10, c="black", alpha=0.5)
         ax.view_init(elev=60, azim=-45)
 
         for s in shapes:
             if s.hardLocked:
-                ax.plot(s.centerX, s.centerY,
-                        s.color[2-i], marker='o', markersize=20, color='magenta')
+                ax.plot(
+                    s.centerX,
+                    s.centerY,
+                    s.color[2 - i],
+                    marker="o",
+                    markersize=20,
+                    color="magenta",
+                )
 
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
+        ax.set_xlabel("X")
+        ax.set_ylabel("Y")
         ax.set_zlabel(l)
 
     plt.show()
 
 
 def set_axes_equal(ax):
-    '''Make axes of 3D plot have equal scale so that spheres appear as spheres,
+    """Make axes of 3D plot have equal scale so that spheres appear as spheres,
     cubes as cubes, etc..  This is one possible solution to Matplotlib's
     ax.set_aspect('equal') and ax.axis('equal') not working for 3D.
 
     Input
       ax: a matplotlib axis, e.g., as output from plt.gca().
-    '''
+    """
 
     x_limits = ax.get_xlim3d()
     y_limits = ax.get_ylim3d()
@@ -121,7 +145,7 @@ def set_axes_equal(ax):
 
     # The plot bounding box is a sphere in the sense of the infinity
     # norm, hence I call half the max range the plot radius.
-    plot_radius = 0.5*max([x_range, y_range, z_range])
+    plot_radius = 0.5 * max([x_range, y_range, z_range])
 
     ax.set_xlim3d([x_middle - plot_radius, x_middle + plot_radius])
     ax.set_ylim3d([y_middle - plot_radius, y_middle + plot_radius])

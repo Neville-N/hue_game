@@ -1,16 +1,13 @@
 import cv2
-import numpy as np
-from ownFuncs.shape import Shape
-import ownFuncs.funcs as of
 from ownFuncs.shapes import Shapes
 import glob
 import os
 
-jpgs = glob.glob('data/backup/*.jpg')
+jpgs = glob.glob("data/backup/*.jpg")
 overwrite = False
 
 for src in jpgs:
-    newsrc = src.replace('.jpg', '.png').replace('backup/', '')
+    newsrc = src.replace(".jpg", ".png").replace("backup/", "")
     if os.path.isfile(newsrc) and not overwrite:
         continue
 
@@ -22,5 +19,5 @@ for src in jpgs:
     x, y, w, h = cv2.boundingRect(bb)
     print(x, y, w, h)
     margin = 20
-    img = img[y-margin:y+h+margin, :, :]
+    img = img[y - margin : y + h + margin, :, :]
     cv2.imwrite(newsrc, img)

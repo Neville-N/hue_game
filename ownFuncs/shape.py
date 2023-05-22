@@ -6,7 +6,14 @@ from typing import List, Final
 
 
 class Shape:
-    def __init__(self, allContours: np.ndarray, contour: np.ndarray, mask: cv2.Mat, color, locked: bool):
+    def __init__(
+        self,
+        allContours: np.ndarray,
+        contour: np.ndarray,
+        mask: cv2.Mat,
+        color,
+        locked: bool,
+    ):
         self.allContours = allContours
         self.contour = contour
         self.color = [int(c) for c in color]
@@ -19,8 +26,8 @@ class Shape:
         self.cstring = of.arr_format(color)
 
         M = cv2.moments(contour)
-        cx = int(M['m10']/M['m00'])
-        cy = int(M['m01']/M['m00'])
+        cx = int(M["m10"] / M["m00"])
+        cy = int(M["m01"] / M["m00"])
         self.center = [cx, cy]
         self.area = cv2.contourArea(contour)
         self.colorEst = np.zeros(3)
@@ -43,7 +50,7 @@ class Shape:
 
     @property
     def countLockedNeighbours(self):
-        return sum([n.locked*1 for n in self.neighbours])
+        return sum([n.locked * 1 for n in self.neighbours])
 
     @property
     def countUnlockedNeighbours(self):
@@ -52,25 +59,26 @@ class Shape:
     @property
     def distToEstimation(self) -> float:
         return np.linalg.norm(self.colorA - self.colorEst)
-    
+
     @property
     def dim1(self) -> int:
-        return self.centerY + 1000*self.centerX
+        return self.centerY + 1000 * self.centerX
 
     def drawContour(self, img: cv2.Mat, thickness: int = 0, color=0):
         if thickness == 0:
             thickness = cv2.FILLED
         if color == 0:
             color = self.color
-        cv2.drawContours(img, self.allContours, contourIdx=-1,
-                         color=color, thickness=thickness)
+        cv2.drawContours(
+            img, self.allContours, contourIdx=-1, color=color, thickness=thickness
+        )
 
     def drawCentroid(self, img, size=8, col=[0, 0, 255]):
         if self.locked and col == [0, 0, 255]:
             col = [0, 255, 0]
         cv2.circle(img, self.center, size, col, -1)
 
-    def checkSwappable(self, otherShape: Shape, verbose:bool=False) -> bool:
+    def checkSwappable(self, otherShape: Shape, verbose: bool = False) -> bool:
         """Determines if a swap is allowable between self and otherShape
 
         Args:
@@ -79,7 +87,7 @@ class Shape:
         Returns:
             bool: If a swap is allowable between self and otherShape
         """
-        areaRatio = self.area/otherShape.area
+        areaRatio = self.area / otherShape.area
         areaCheck = 0.8 < areaRatio and areaRatio < 1.2
         if verbose and not areaCheck:
             print(f"performing illegal swap, area ratio is {areaRatio}")
@@ -96,15 +104,21 @@ class Shape:
         if otherShape.locked:
             print("This shape is not allowed to swap, other")
         self.checkSwappable(otherShape)
-            
+
         self.color, otherShape.color = otherShape.color, self.color
 
-    def findNeighbours(self, img: cv2.Mat, shapes: List[Shape], searchRadially: bool = True, range: int = 10):
-        """Determines which shapes are close enough to be listed as "Neighbours"
+    def findNeighbours(
+        self,
+        img: cv2.Mat,
+        shapes: List[Shape],
+        searchRadially: bool = True,
+        range: int = 10,
+    ):
+        """Determines what shapes are close enough to be listed as "Neighbours"
 
         Args:
-            img (cv2.Mat): Image of the shapes 
-            shapes (list[Shape]): List of all shapes which could be a neighbour.  
+            img (cv2.Mat): Image of the shapes
+            shapes (list[Shape]): List of all shapes which could be a neighbour.
             searchRadially (bool, optional): Determines search strategy. If false cardinal directions will be used from the contour. Defaults to True.
             range (int, optional): How far to look away from contour to hop over the black border. Defaults to 10.
         """
@@ -119,8 +133,7 @@ class Shape:
             if searchRadially:
                 # check radial directions
                 dir = c - self.center
-                check_locations = [
-                    c + np.int64(range / np.linalg.norm(dir) * dir)]
+                check_locations = [c + np.int64(range / np.linalg.norm(dir) * dir)]
             else:
                 # check cardinal directions
                 check_locations = c + dirs
@@ -136,7 +149,8 @@ class Shape:
                         found_colors.append(check_color)
                         # found_shape = shapes[of.arr_format(check_color, '3')]
                         found_shape = next(
-                            (s for s in shapes if s.color == check_color), None)
+                            (s for s in shapes if s.color == check_color), None
+                        )
                         self.neighbours.append(found_shape)
 
     def drawNeighbours(self, img: cv2.Mat, color=[0, 255, 0], thickness=3):
@@ -173,7 +187,7 @@ class Shape:
             dist += shape.RGB_distance(n)
         if counted == 0:
             return np.inf
-        return dist/counted
+        return dist / counted
 
     def neighboursDistance(self, onlyCheckLocked: bool = False):
         dist = 0
@@ -185,10 +199,14 @@ class Shape:
             dist += self.RGB_distance(n)
         if counted == 0:
             return 0
-        return dist/counted
+        return dist / counted
 
-    def findBestSwap(self, shapes: list[Shape], distOnlyCheckLocked: bool = True) -> Shape:
-        """Finds other shape with color that would be best suited for this shape. 
+    def findBestSwap(
+        self,
+        shapes: list[Shape],
+        distOnlyCheckLocked: bool = True,
+    ) -> Shape:
+        """Finds other shape with color that would be best suited for this shape.
         Determines fit by calculating average rgb distance to (locked) neighbouring cells
 
         Args:
@@ -203,8 +221,7 @@ class Shape:
         for swap_candidate in shapes:
             if not self.checkSwappable(swap_candidate):
                 continue
-            rgb_dist = self.RGB2NeighboursDistance(
-                swap_candidate, distOnlyCheckLocked)
+            rgb_dist = self.RGB2NeighboursDistance(swap_candidate, distOnlyCheckLocked)
             if rgb_dist < minDist:
                 minDist = rgb_dist
                 closestShape = swap_candidate

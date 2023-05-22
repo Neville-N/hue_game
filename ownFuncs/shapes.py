@@ -5,7 +5,7 @@ import ownFuncs.funcs as of
 
 
 class Shapes:
-    def __init__(self, img: cv2.Mat, puzzleId: str = '_'):
+    def __init__(self, img: cv2.Mat, puzzleId: str = "_"):
         colors, minFreq = of.collectCollors(img)
 
         self.all: list[Shape] = []
@@ -27,7 +27,8 @@ class Shapes:
             shapeMask = cv2.dilate(eroded, kernel, iterations=1)
 
             contours, hierarchy = cv2.findContours(
-                shapeMask, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+                shapeMask, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE
+            )
 
             # Filter based on area again after dilation erosion process.
             contourAreas = [cv2.contourArea(c) for c in contours]
@@ -54,12 +55,11 @@ class Shapes:
 
         # Notate neighbour relationships
         for shape in self.all:
-            shape.findNeighbours(
-                self.img, self.all, searchRadially=False, range=10)
+            shape.findNeighbours(self.img, self.all, searchRadially=False, range=10)
 
     @property
     def average_estimation_error(self):
-        return sum([s.distToEstimation for s in self.all])/len(self.all)
+        return sum([s.distToEstimation for s in self.all]) / len(self.all)
 
     def updateImg(self, drawCentroid=True):
         self.img = np.zeros_like(self.imgref)
@@ -69,14 +69,12 @@ class Shapes:
                 s.drawCentroid(self.img)
 
     def visualizeNeighbours(self, saveImage=True, drawOnScreen=True):
-        """Visualize which cells are counted as neighbours
-        """
+        """Visualize which cells are counted as neighbours"""
         i = 0
         for shape in self.all:
             i += 1
             neighbourChecker = np.copy(self.imgref)
-            shape.drawNeighbours(
-                neighbourChecker, color=(0, 0, 255), thickness=6)
+            shape.drawNeighbours(neighbourChecker, color=(0, 0, 255), thickness=6)
             shape.drawContour(neighbourChecker, color=(255, 0, 0), thickness=6)
             if drawOnScreen:
                 cv2.imshow("c", neighbourChecker)

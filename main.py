@@ -7,16 +7,16 @@ import numpy as np
 import ownFuncs.solveStrategies as ss
 
 # run settings
-Npuzzle = '15'
+Npuzzle = "15"
 grabSolved = False
 skipSwap = False
 
 # load image
 if grabSolved:
-    src = f'data/hue_solved_{Npuzzle}.png'
-    Npuzzle += 's'
+    src = f"data/hue_solved_{Npuzzle}.png"
+    Npuzzle += "s"
 else:
-    src = f'data/hue_scrambled_{Npuzzle}.png'
+    src = f"data/hue_scrambled_{Npuzzle}.png"
 img = cv2.imread(src)
 assert img is not None, "file could not be read, check with os.path.exists()"
 
@@ -41,4 +41,4 @@ plotter.colSpacePlot(shapes.all, drawConnections=True)
 plotter.surfacePlot2(shapes.all)
 
 
-print('done')
+print("done")

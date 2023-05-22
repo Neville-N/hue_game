@@ -4,8 +4,7 @@ import cv2
 
 
 def solve2(shapes: Shapes, Npuzzle: str):
-    """N times find shape with most locked neighbours and pick color relative to them
-    """
+    """N times find shape with most locked neighbours and pick color relative to them"""
     shapes.unlocked.sort(key=lambda x: x.countLockedNeighbours, reverse=True)
     loopcount = 0
     stepcount = 0
@@ -16,20 +15,19 @@ def solve2(shapes: Shapes, Npuzzle: str):
     while len(shapes.unlocked) > 1:
         stepcount += 1
         current_shape = shapes.unlocked[0]
-        swap_shape = current_shape.findBestSwap(
-            shapes.unlocked, onlyCheckLocked)
+        swap_shape = current_shape.findBestSwap(shapes.unlocked, onlyCheckLocked)
         if swap_shape:
             shapes.swapShapes(current_shape, swap_shape)
             shapes.markSwappedShapes(current_shape, swap_shape)
             print(f"{stepcount} swap")
             of.saveImg(
-                shapes.img, f"data/solveanimation{Npuzzle}/", f"step_{stepcount}.png")
+                shapes.img, f"data/solveanimation{Npuzzle}/", f"step_{stepcount}.png"
+            )
             cv2.imshow("shapeShower", shapes.img)
             cv2.waitKey(1)
         else:
             print(f"{stepcount} no swap")
-        shapes.unlocked.sort(
-            key=lambda x: x.countLockedNeighbours, reverse=True)
+        shapes.unlocked.sort(key=lambda x: x.countLockedNeighbours, reverse=True)
 
         if len(shapes.unlocked) == 0:
             print("new loop")
