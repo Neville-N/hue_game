@@ -64,8 +64,16 @@ class Shapes:
         return sum([s.distToEstimation for s in self.all]) / len(self.all)
 
     @property
-    def centerPoints(self):
+    def center_points(self):
         return [s.center for s in self.all]
+
+    @property
+    def centerX(self):
+        return [s.centerX for s in self.all]
+
+    @property
+    def centerY(self):
+        return [s.centerY for s in self.all]
 
     def updateImg(self, drawCentroid=True):
         self.img = np.zeros_like(self.imgref)
@@ -140,3 +148,45 @@ class Shapes:
             subdiv.insert((int(cx), int(cy)))
 
         vp.draw_voronoi(self.voronoi_img, subdiv, self, True)
+
+    def snape_to_grid_x(self):
+        unique_x, freq_x = np.unique(self.centerX, return_counts=True)
+        # print(f"before X {unique_x}")
+        changed = False
+        for i, x in enumerate(unique_x[:-1]):
+            if unique_x[i + 1] - x < 10:
+                to_x = (freq_x[i] * x + freq_x[i + 1] * unique_x[i + 1]) / (
+                    freq_x[i] + freq_x[i + 1]
+                )
+                self.move_shapes_x(x, to_x)
+                self.move_shapes_x(unique_x[i + 1], to_x)
+                changed = True
+        unique_x, freq_x = np.unique(self.centerX, return_counts=True)
+        # print(f"after X  {unique_x}")
+        return changed
+
+    def snape_to_grid_y(self):
+        unique_y, freq_y = np.unique(self.centerY, return_counts=True)
+        # print(f"before Y {unique_y}")
+        changed = False
+        for i, y in enumerate(unique_y[:-1]):
+            if unique_y[i + 1] - y < 10:
+                to_y = (freq_y[i] * y + freq_y[i + 1] * unique_y[i + 1]) / (
+                    freq_y[i] + freq_y[i + 1]
+                )
+                self.move_shapes_y(y, to_y)
+                self.move_shapes_y(unique_y[i + 1], to_y)
+                changed = True
+        unique_y, freq_y = np.unique(self.centerY, return_counts=True)
+        # print(f"after Y  {unique_y}")
+        return changed
+
+    def move_shapes_x(self, start_x, to_x):
+        for shape in self.all:
+            if shape.centerX == start_x:
+                shape.center[0] = to_x
+
+    def move_shapes_y(self, start_y, to_y):
+        for shape in self.all:
+            if shape.centerY == start_y:
+                shape.center[1] = to_y
