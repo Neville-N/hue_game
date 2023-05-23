@@ -6,7 +6,7 @@ import ownFuncs.voronoiPlotter as vp
 
 
 class Shapes:
-    def __init__(self, img: cv2.Mat, puzzleId: str = "_"):
+    def __init__(self, img: cv2.Mat, puzzleId: str = "_", search_neighbours=False):
         colors, minFreq = of.collectCollors(img)
 
         self.all: list[Shape] = []
@@ -56,8 +56,9 @@ class Shapes:
         self.updateImg(False)
 
         # Notate neighbour relationships
-        for shape in self.all:
-            shape.findNeighbours(self.img, self.all, searchRadially=False, range=10)
+        if search_neighbours:
+            for shape in self.all:
+                shape.findNeighbours(self.img, self.all, searchRadially=False, range=10)
 
     @property
     def average_estimation_error(self) -> float:
@@ -133,7 +134,7 @@ class Shapes:
         # mindist = closestShape.RGB_distance(None, BGR)
         return closestShape, mindist
 
-    def draw_voronoi(self, f=1, draw_lines=True):
+    def draw_voronoi(self, f=1, draw_lines=True, draw_centroids=False):
         size = self.img.shape
         rect = (0, 0, size[1], size[0])
         subdiv = cv2.Subdiv2D(rect)
@@ -147,14 +148,15 @@ class Shapes:
 
             subdiv.insert((int(cx), int(cy)))
 
-        vp.draw_voronoi(self.voronoi_img, subdiv, self, draw_lines)
+        vp.draw_voronoi(self.voronoi_img, subdiv, self, draw_lines, draw_centroids)
 
     def snape_to_grid_x(self):
         unique_x, freq_x = np.unique(self.centerX, return_counts=True)
         # print(f"before X {unique_x}")
         changed = False
+        rangelim = self.img.shape[0] // 100
         for i, x in enumerate(unique_x[:-1]):
-            if unique_x[i + 1] - x < 10:
+            if unique_x[i + 1] - x < rangelim:
                 to_x = (freq_x[i] * x + freq_x[i + 1] * unique_x[i + 1]) / (
                     freq_x[i] + freq_x[i + 1]
                 )
@@ -169,8 +171,9 @@ class Shapes:
         unique_y, freq_y = np.unique(self.centerY, return_counts=True)
         # print(f"before Y {unique_y}")
         changed = False
+        rangelim = self.img.shape[0] // 100
         for i, y in enumerate(unique_y[:-1]):
-            if unique_y[i + 1] - y < 10:
+            if unique_y[i + 1] - y < rangelim:
                 to_y = (freq_y[i] * y + freq_y[i + 1] * unique_y[i + 1]) / (
                     freq_y[i] + freq_y[i + 1]
                 )
@@ -201,7 +204,7 @@ class Shapes:
         for i, di in enumerate(dx):
             if di % 2 == 1:
                 dx[i] += adder
-                adder *= -1
+                adder *= 1
         dx //= 2
         new_x = np.concatenate((np.array([unique_x[0]]), unique_x[0] + np.cumsum(dx)))
         for start_x, to_x in zip(unique_x, new_x):
@@ -217,7 +220,7 @@ class Shapes:
         for i, di in enumerate(dy):
             if di % 2 == 1:
                 dy[i] += adder
-                adder *= -1
+                adder *= 1
         dy //= 2
         new_y = np.concatenate((np.array([unique_y[0]]), unique_y[0] + np.cumsum(dy)))
         for start_y, to_y in zip(unique_y, new_y):

@@ -132,6 +132,8 @@ class Shape:
         dirs = range * np.array([[-1, 0], [1, 0], [0, -1], [0, 1]], dtype=int)
         found_colors = [self.color, [0, 0, 0]]
         count_colors = {}
+        width = img.shape[1]
+        height = img.shape[0]
 
         for c in self.contour:
             c = c[0]
@@ -139,13 +141,14 @@ class Shape:
             if searchRadially:
                 # check radial directions
                 dir = c - self.center
-                check_locations = [c + np.int64(range / np.linalg.norm(dir) * dir)]
+                check_locations = [c + np.int32(range / np.linalg.norm(dir) * dir)]
             else:
                 # check cardinal directions
                 check_locations = c + dirs
 
             for check_dir in check_locations:
-                check_color = img[check_dir[1], check_dir[0]].tolist()
+                check_dir_ = [min(height - 1, check_dir[1]), min(width - 1, check_dir[0])]
+                check_color = img[check_dir_[0], check_dir_[1]].tolist()
                 if check_color not in found_colors:
                     if str(check_color) not in count_colors.keys():
                         count_colors[str(check_color)] = 0

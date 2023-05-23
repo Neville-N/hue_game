@@ -3,7 +3,7 @@ from ownFuncs.shape import Shape
 import numpy as np
 from matplotlib import use as matplotlib_use
 import matplotlib.tri as mtri
-from mpl_toolkits.mplot3d import Axes3D
+# from mpl_toolkits.mplot3d import Axes3D
 
 matplotlib_use("TkAgg")
 

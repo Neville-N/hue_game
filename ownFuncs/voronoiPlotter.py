@@ -1,8 +1,5 @@
 import cv2
 import numpy as np
-import ownFuncs.funcs as of
-
-# from ownFuncs.shapes import Shapes
 
 
 def rect_contains(rect, point):

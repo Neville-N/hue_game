@@ -58,8 +58,6 @@ def saveImg(img: cv2.Mat, dir: str, filename: str):
 
 
 def arr_format(arr, format=" "):
-    formatted_arr = [f"{v:{format}}" for v in arr]
-
     ret = "["
     for i, v in enumerate(arr):
         ret += f"{v:{format}}"

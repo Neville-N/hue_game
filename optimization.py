@@ -11,11 +11,15 @@ from ownFuncs.shapes import Shapes
 matplotlib_use("TkAgg")
 
 logstr: str = ""
+log_file = open("log.txt", "w")
+log_file.write(logstr)
+log_file.close()
+log_file = open("log.txt", "a")
 
 
 def log(text: str):
-    global logstr
-    logstr += f"\n{text}"
+    global log_file
+    log_file.write(f"\n{text}")
 
 
 def optimization_strat(PUZZLE_ID: str, show_plot: bool, SAVE_IMAGES: bool = True):
@@ -28,6 +32,27 @@ def optimization_strat(PUZZLE_ID: str, show_plot: bool, SAVE_IMAGES: bool = True
     img = of.scaleImg(img, maxHeight=1000, maxWidth=3000)
 
     shapes = Shapes(img, PUZZLE_ID)
+
+    cx_string = "\n"
+    cx_string += "Before running\n"
+    cx_string += f"centerX      : {of.arr_format(np.unique(shapes.centerX))}\n"
+    dx = np.diff(np.unique(shapes.centerX))
+    cx_string += f"diff(x)      : {of.arr_format(dx)}\n"
+    dx2 = np.diff(np.unique(shapes.centerX), 2)
+    cx_string += f"diff2(x)     : {of.arr_format(dx2)}\n"
+    cx_string += f"uni_dx       : {of.arr_format(np.unique(dx))}\n"
+    dx_unique_dx = np.diff(np.unique(dx))
+    cx_string += f"diff(uni_dx) : {of.arr_format(dx_unique_dx)}\n"
+    # fit shapes to grid
+    while shapes.snape_to_grid_x():
+        pass
+
+    while shapes.snape_to_grid_y():
+        pass
+    shapes.make_symmetric_x()
+    shapes.make_symmetric_y()
+    shapes.sort_all()
+
     order: int = 1
     datas, MGs, Cs = opt.fitSurface(shapes, order)
     opt.setShapeColorEstimations(shapes, Cs, order)
@@ -64,10 +89,8 @@ def optimization_strat(PUZZLE_ID: str, show_plot: bool, SAVE_IMAGES: bool = True
     somethingChanged = True
     limit = 0
 
-    avg_est_error = shapes.average_estimation_error
-    # somethingChanged and
     refit = False
-    while limit < 100:  # and avg_est_error > 1.5:
+    while limit < 100:
         if limit % 10 == 0 or len(shapes.unlocked) == 0 or not somethingChanged:
             shapes.resetLocks()
             opt.determine_close_to_estimate(shapes)
@@ -120,16 +143,29 @@ def optimization_strat(PUZZLE_ID: str, show_plot: bool, SAVE_IMAGES: bool = True
 
     # opt.plotSurfaces(datas, MGs, datas2)
     # plt.show()
-    while shapes.snape_to_grid_x():
-        pass
 
-    while shapes.snape_to_grid_y():
-        pass
+    # while shapes.snape_to_grid_x():
+    #     pass
 
-    shapes.make_symmetric_x()
-    shapes.make_symmetric_y()
-    shapes.sort_all()
-    shapes.draw_voronoi(draw_lines=False)
+    # while shapes.snape_to_grid_y():
+    #     pass
+
+    # shapes.make_symmetric_x()
+    # shapes.make_symmetric_y()
+    # shapes.sort_all()
+
+    log(cx_string)
+    log("After running")
+    log(f"centerX      : {of.arr_format(np.unique(shapes.centerX))}")
+    dx = np.diff(np.unique(shapes.centerX))
+    log(f"diff(x)      : {of.arr_format(dx)}")
+    dx2 = np.diff(np.unique(shapes.centerX), 2)
+    log(f"diff2(x)     : {of.arr_format(dx2)}")
+    log(f"uni_dx       : {of.arr_format(np.unique(dx))}")
+    dx_unique_dx = np.diff(np.unique(dx))
+    log(f"diff(uni_dx) : {of.arr_format(dx_unique_dx)}")
+
+    shapes.draw_voronoi(draw_lines=True, draw_centroids=True)
     of.saveImg(shapes.voronoi_img, "data/voronoi/", f"P{PUZZLE_ID}.png")
 
 
@@ -140,8 +176,7 @@ for id in [str(i) for i in range(34)]:
 
 
 # optimization_strat("14", False)
+
 # plt.show()
 
-log_file = open("log.txt", "w")
-log_file.write(logstr)
 log_file.close()
