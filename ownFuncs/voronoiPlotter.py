@@ -33,7 +33,7 @@ def draw_delaunay(img, subdiv, delaunay_color):
             cv2.line(img, pt3, pt1, delaunay_color, 1, cv2.LINE_AA, 0)
 
 
-def draw_voronoi(img, subdiv, shapes, draw_lines=False):
+def draw_voronoi(img, subdiv, shapes, draw_lines=False, draw_centroids=False):
     (facets, centers) = subdiv.getVoronoiFacetList([])
     for i in range(0, len(facets)):
         ifacet_arr = [f for f in facets[i]]
@@ -46,14 +46,15 @@ def draw_voronoi(img, subdiv, shapes, draw_lines=False):
             ifacets = np.array([ifacet])
             cv2.polylines(img, ifacets, True, (0, 0, 0), 1, cv2.LINE_AA, 0)
         center = centers[i].astype(np.int32)
-        cv2.circle(
-            img,
-            center,
-            3,
-            (0, 0, 0),
-            cv2.FILLED,
-            cv2.LINE_AA,
-            0,
-        )
+        if shapes.all[i].hardLocked or draw_centroids:
+            cv2.circle(
+                img,
+                center,
+                3,
+                (0, 0, 0),
+                cv2.FILLED,
+                cv2.LINE_AA,
+                0,
+            )
     # cv2.imshow("voronoi img", img)
     # cv2.waitKey(0)

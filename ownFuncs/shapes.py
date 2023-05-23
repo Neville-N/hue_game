@@ -133,7 +133,7 @@ class Shapes:
         # mindist = closestShape.RGB_distance(None, BGR)
         return closestShape, mindist
 
-    def draw_voronoi(self, f=20):
+    def draw_voronoi(self, f=1, draw_lines=True):
         size = self.img.shape
         rect = (0, 0, size[1], size[0])
         subdiv = cv2.Subdiv2D(rect)
@@ -147,7 +147,7 @@ class Shapes:
 
             subdiv.insert((int(cx), int(cy)))
 
-        vp.draw_voronoi(self.voronoi_img, subdiv, self, True)
+        vp.draw_voronoi(self.voronoi_img, subdiv, self, draw_lines)
 
     def snape_to_grid_x(self):
         unique_x, freq_x = np.unique(self.centerX, return_counts=True)
@@ -190,3 +190,38 @@ class Shapes:
         for shape in self.all:
             if shape.centerY == start_y:
                 shape.center[1] = to_y
+
+    def make_symmetric_x(self):
+        unique_x = np.unique(self.centerX)
+        dx = np.diff(unique_x)
+        dx += np.flip(dx)
+
+        # switch between rounding up and down
+        adder = 1
+        for i, di in enumerate(dx):
+            if di % 2 == 1:
+                dx[i] += adder
+                adder *= -1
+        dx //= 2
+        new_x = np.concatenate((np.array([unique_x[0]]), unique_x[0] + np.cumsum(dx)))
+        for start_x, to_x in zip(unique_x, new_x):
+            self.move_shapes_x(start_x, to_x)
+
+    def make_symmetric_y(self):
+        unique_y = np.unique(self.centerY)
+        dy = np.diff(unique_y)
+        dy += np.flip(dy)
+
+        # switch between rounding up and down
+        adder = 1
+        for i, di in enumerate(dy):
+            if di % 2 == 1:
+                dy[i] += adder
+                adder *= -1
+        dy //= 2
+        new_y = np.concatenate((np.array([unique_y[0]]), unique_y[0] + np.cumsum(dy)))
+        for start_y, to_y in zip(unique_y, new_y):
+            self.move_shapes_y(start_y, to_y)
+
+    def sort_all(self):
+        self.all = sorted(self.all, key=lambda s: s.dim1)

@@ -122,11 +122,14 @@ def optimization_strat(PUZZLE_ID: str, show_plot: bool, SAVE_IMAGES: bool = True
     # plt.show()
     while shapes.snape_to_grid_x():
         pass
-    
+
     while shapes.snape_to_grid_y():
         pass
 
-    shapes.draw_voronoi(1)
+    shapes.make_symmetric_x()
+    shapes.make_symmetric_y()
+    shapes.sort_all()
+    shapes.draw_voronoi(draw_lines=False)
     of.saveImg(shapes.voronoi_img, "data/voronoi/", f"P{PUZZLE_ID}.png")
 
 
@@ -136,7 +139,7 @@ for id in [str(i) for i in range(34)]:
     log("\n")
 
 
-# optimization_strat("1", False)
+# optimization_strat("14", False)
 # plt.show()
 
 log_file = open("log.txt", "w")
