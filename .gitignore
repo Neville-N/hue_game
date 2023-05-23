@@ -163,3 +163,4 @@ cython_debug/
 data/animation*/
 data/solve*/
 data/*.gif
+data/voronoi*

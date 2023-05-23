@@ -1,9 +1,7 @@
 import cv2
 import ownFuncs.funcs as of
-from ownFuncs.shape import Shape
 from ownFuncs.shapes import Shapes
 import ownFuncs.colorspacePlotter as plotter
-import numpy as np
 import ownFuncs.solveStrategies as ss
 
 # run settings
@@ -37,7 +35,7 @@ print("Draw plots? opencv window will stop reacting.")
 cv2.waitKey(0)
 
 # Show plots for analyzing results
-plotter.colSpacePlot(shapes.all, drawConnections=True)
+plotter.rgb_space_plot(shapes.all, drawConnections=True)
 plotter.surfacePlot2(shapes.all)
 
 

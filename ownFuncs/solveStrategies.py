@@ -9,7 +9,6 @@ def solve2(shapes: Shapes, Npuzzle: str):
     loopcount = 0
     stepcount = 0
     onlyCheckLocked = True
-    stratSteps = 200
 
     # while stepcount < stratSteps and loopcount < 1:
     while len(shapes.unlocked) > 1:

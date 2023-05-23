@@ -8,7 +8,7 @@ from mpl_toolkits.mplot3d import Axes3D
 matplotlib_use("TkAgg")
 
 
-def colSpacePlot(Shapes: list[Shape], drawConnections=True, markerSize=20):
+def rgb_space_plot(Shapes: list[Shape], drawConnections=True, markerSize=20):
     ax = plt.figure(figsize=(10, 10)).add_subplot(projection="3d")
     for shape in Shapes:
         # Draw connecting lines
@@ -50,7 +50,7 @@ def colSpacePlot(Shapes: list[Shape], drawConnections=True, markerSize=20):
     ax.set_zlabel("Blue")
 
 
-def surfacePlot(shapes: list[Shape]):
+def surface_plot(shapes: list[Shape]):
     X = [s.centerX for s in shapes]
     Y = [s.centerY for s in shapes]
     R = [s.color[2] for s in shapes]

@@ -28,7 +28,11 @@ class Shape:
         M = cv2.moments(contour)
         cx = int(M["m10"] / M["m00"])
         cy = int(M["m01"] / M["m00"])
-        self.center = [cx, cy]
+
+        # cx = cx - cx % 10
+        # cy = cy - cy % 10
+
+        self.center = np.array([cx, cy]).astype(np.int32)
         self.area = cv2.contourArea(contour)
         self.colorEst = np.zeros(3)
 
@@ -76,7 +80,7 @@ class Shape:
     def drawCentroid(self, img, size=8, col=[0, 0, 255]):
         if self.locked and col == [0, 0, 255]:
             col = [0, 255, 0]
-        cv2.circle(img, self.center, size, col, -1)
+        cv2.circle(img, self.center, size, col, -1, cv2.LINE_AA)
 
     def checkSwappable(self, otherShape: Shape, verbose: bool = False) -> bool:
         """Determines if a swap is allowable between self and otherShape
@@ -119,8 +123,10 @@ class Shape:
         Args:
             img (cv2.Mat): Image of the shapes
             shapes (list[Shape]): List of all shapes which could be a neighbour.
-            searchRadially (bool, optional): Determines search strategy. If false cardinal directions will be used from the contour. Defaults to True.
-            range (int, optional): How far to look away from contour to hop over the black border. Defaults to 10.
+            searchRadially (bool, optional): Determines search strategy. If false,
+                cardinal directions will be used from the contour. Defaults to True.
+            range (int, optional): How far to look away from contour to hop over the black border.
+                Defaults to 10.
         """
 
         dirs = range * np.array([[-1, 0], [1, 0], [0, -1], [0, 1]], dtype=int)
@@ -202,16 +208,15 @@ class Shape:
         return dist / counted
 
     def findBestSwap(
-        self,
-        shapes: list[Shape],
-        distOnlyCheckLocked: bool = True,
+        self, shapes: list[Shape], distOnlyCheckLocked: bool = True
     ) -> Shape:
         """Finds other shape with color that would be best suited for this shape.
         Determines fit by calculating average rgb distance to (locked) neighbouring cells
 
         Args:
             shapes (list[Shape]): Collection of potential shapes to swap colors with.
-            distOnlyCheckLocked (bool, optional): Determines if the distance of non locked neighbours should be ignored. Defaults to True.
+            distOnlyCheckLocked (bool, optional): Determines if the distance of
+                non locked neighbours should be ignored. Defaults to True.
 
         Returns:
             Shape: Shape with color closest to neighbours

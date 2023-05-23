@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from ownFuncs.shape import Shape
 import ownFuncs.funcs as of
+import ownFuncs.voronoiPlotter as vp
 
 
 class Shapes:
@@ -14,6 +15,7 @@ class Shapes:
         self.close_to_estimate: list[Shape] = []
         self.imgref = img
         self.img = np.zeros_like(img)
+        self.voronoi_img = np.zeros_like(img)
 
         for i, c in enumerate(colors):
             shapeMask_raw = cv2.inRange(self.imgref, c, c)
@@ -58,8 +60,12 @@ class Shapes:
             shape.findNeighbours(self.img, self.all, searchRadially=False, range=10)
 
     @property
-    def average_estimation_error(self):
+    def average_estimation_error(self) -> float:
         return sum([s.distToEstimation for s in self.all]) / len(self.all)
+
+    @property
+    def centerPoints(self):
+        return [s.center for s in self.all]
 
     def updateImg(self, drawCentroid=True):
         self.img = np.zeros_like(self.imgref)
@@ -115,4 +121,22 @@ class Shapes:
                     continue
             mindist = dist
             closestShape = s
+        # closestShape = min(self.unlocked, key=lambda s: s.RGB_distance(None, BGR))
+        # mindist = closestShape.RGB_distance(None, BGR)
         return closestShape, mindist
+
+    def draw_voronoi(self, f=20):
+        size = self.img.shape
+        rect = (0, 0, size[1], size[0])
+        subdiv = cv2.Subdiv2D(rect)
+        for s in self.all:
+            cx = s.centerX
+            cy = s.centerY
+            # cx -= cx % f
+            # cy -= cy % f
+            cx = f * round(cx / f)
+            cy = f * round(cy / f)
+
+            subdiv.insert((int(cx), int(cy)))
+
+        vp.draw_voronoi(self.voronoi_img, subdiv, self, True)

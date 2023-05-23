@@ -120,17 +120,19 @@ def optimization_strat(PUZZLE_ID: str, show_plot: bool, SAVE_IMAGES: bool = True
 
     # opt.plotSurfaces(datas, MGs, datas2)
     # plt.show()
+    shapes.draw_voronoi(20)
+    of.saveImg(shapes.voronoi_img, "data/voronoi/", f"P{PUZZLE_ID}.png")
 
 
 ids = [str(i) for i in range(34)]
 
-# for id in ids:
-#     print(id)
-#     optimization_strat(id, False, True)
-#     log('\n')
+for id in ids:
+    print(id)
+    optimization_strat(id, False, True)
+    log("\n")
 
 
-# optimization_strat('33', False)
+# optimization_strat("1", False)
 # plt.show()
 
 log_file = open("log.txt", "w")
