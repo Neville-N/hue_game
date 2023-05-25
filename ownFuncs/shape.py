@@ -92,7 +92,7 @@ class Shape:
             bool: If a swap is allowable between self and otherShape
         """
         areaRatio = self.area / otherShape.area
-        areaCheck = 0.8 < areaRatio and areaRatio < 1.2
+        areaCheck = 0.9 < areaRatio and areaRatio < 1.1
         if verbose and not areaCheck:
             print(f"performing illegal swap, area ratio is {areaRatio}")
         return areaCheck

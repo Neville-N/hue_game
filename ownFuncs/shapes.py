@@ -3,6 +3,7 @@ import numpy as np
 from ownFuncs.shape import Shape
 import ownFuncs.funcs as of
 import ownFuncs.voronoiPlotter as vp
+import time
 
 
 class Shapes:
@@ -99,12 +100,30 @@ class Shapes:
                 filename = f"frame_{i}.png"
                 of.saveImg(neighbourChecker, folder, filename)
 
-    def swapShapes(self, A: Shape, B: Shape):
+    def swapShapes(self, A: Shape, B: Shape, dev=None):
         A.swap(B)
         A.locked = True
         self.unlocked.remove(A)
         self.locked.append(A)
         self.updateImg()
+        if not A.same_as(B):
+            if dev is not None:
+                self.fysical_swap_swipe(A, B, dev)
+                time.sleep(0.2)
+
+    def fysical_swap(self, A: Shape, B: Shape, dev):
+        command = f"input tap {A.centerX} {A.centerY}"
+        print(command)
+        dev.shell(command)
+
+        command2 = f"input tap {B.centerX} {B.centerY}"
+        print(command2)
+        dev.shell(command2)
+
+    def fysical_swap_swipe(self, A, B, dev):
+        command = f"input swipe {B.centerX} {B.centerY} {A.centerX} {A.centerY} 200"
+        print(command)
+        dev.shell(command)
 
     def markSwappedShapes(self, A: Shape, B: Shape):
         self.img = cv2.arrowedLine(self.img, B.center, A.center, [0, 0, 0], 5)

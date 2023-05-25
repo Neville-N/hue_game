@@ -28,30 +28,30 @@ def optimization_strat(PUZZLE_ID: str, show_plot: bool, SAVE_IMAGES: bool = True
     img = cv2.imread(src)
     assert img is not None, "file could not be read"
 
-    # Reduce image size to ease computations
-    img = of.scaleImg(img, maxHeight=1000, maxWidth=3000)
+    # # Reduce image size to ease computations
+    # img = of.scaleImg(img, maxHeight=1000, maxWidth=3000)
 
     shapes = Shapes(img, PUZZLE_ID)
 
-    cx_string = "\n"
-    cx_string += "Before running\n"
-    cx_string += f"centerX      : {of.arr_format(np.unique(shapes.centerX))}\n"
-    dx = np.diff(np.unique(shapes.centerX))
-    cx_string += f"diff(x)      : {of.arr_format(dx)}\n"
-    dx2 = np.diff(np.unique(shapes.centerX), 2)
-    cx_string += f"diff2(x)     : {of.arr_format(dx2)}\n"
-    cx_string += f"uni_dx       : {of.arr_format(np.unique(dx))}\n"
-    dx_unique_dx = np.diff(np.unique(dx))
-    cx_string += f"diff(uni_dx) : {of.arr_format(dx_unique_dx)}\n"
-    # fit shapes to grid
-    while shapes.snape_to_grid_x():
-        pass
+    # cx_string = "\n"
+    # cx_string += "Before running\n"
+    # cx_string += f"centerX      : {of.arr_format(np.unique(shapes.centerX))}\n"
+    # dx = np.diff(np.unique(shapes.centerX))
+    # cx_string += f"diff(x)      : {of.arr_format(dx)}\n"
+    # dx2 = np.diff(np.unique(shapes.centerX), 2)
+    # cx_string += f"diff2(x)     : {of.arr_format(dx2)}\n"
+    # cx_string += f"uni_dx       : {of.arr_format(np.unique(dx))}\n"
+    # dx_unique_dx = np.diff(np.unique(dx))
+    # cx_string += f"diff(uni_dx) : {of.arr_format(dx_unique_dx)}\n"
+    # # fit shapes to grid
+    # while shapes.snape_to_grid_x():
+    #     pass
 
-    while shapes.snape_to_grid_y():
-        pass
-    shapes.make_symmetric_x()
-    shapes.make_symmetric_y()
-    shapes.sort_all()
+    # while shapes.snape_to_grid_y():
+    #     pass
+    # shapes.make_symmetric_x()
+    # shapes.make_symmetric_y()
+    # shapes.sort_all()
 
     order: int = 1
     datas, MGs, Cs = opt.fitSurface(shapes, order)
@@ -154,28 +154,28 @@ def optimization_strat(PUZZLE_ID: str, show_plot: bool, SAVE_IMAGES: bool = True
     # shapes.make_symmetric_y()
     # shapes.sort_all()
 
-    log(cx_string)
-    log("After running")
-    log(f"centerX      : {of.arr_format(np.unique(shapes.centerX))}")
-    dx = np.diff(np.unique(shapes.centerX))
-    log(f"diff(x)      : {of.arr_format(dx)}")
-    dx2 = np.diff(np.unique(shapes.centerX), 2)
-    log(f"diff2(x)     : {of.arr_format(dx2)}")
-    log(f"uni_dx       : {of.arr_format(np.unique(dx))}")
-    dx_unique_dx = np.diff(np.unique(dx))
-    log(f"diff(uni_dx) : {of.arr_format(dx_unique_dx)}")
+    # log(cx_string)
+    # log("After running")
+    # log(f"centerX      : {of.arr_format(np.unique(shapes.centerX))}")
+    # dx = np.diff(np.unique(shapes.centerX))
+    # log(f"diff(x)      : {of.arr_format(dx)}")
+    # dx2 = np.diff(np.unique(shapes.centerX), 2)
+    # log(f"diff2(x)     : {of.arr_format(dx2)}")
+    # log(f"uni_dx       : {of.arr_format(np.unique(dx))}")
+    # dx_unique_dx = np.diff(np.unique(dx))
+    # log(f"diff(uni_dx) : {of.arr_format(dx_unique_dx)}")
 
     shapes.draw_voronoi(draw_lines=True, draw_centroids=True)
     of.saveImg(shapes.voronoi_img, "data/voronoi/", f"P{PUZZLE_ID}.png")
 
 
-for id in [str(i) for i in range(34)]:
-    print(id)
-    optimization_strat(id, False, True)
-    log("\n")
+# for id in [str(i) for i in range(34)]:
+#     print(id)
+#     optimization_strat(id, False, True)
+#     log("\n")
 
 
-# optimization_strat("14", False)
+optimization_strat("screen", False)
 
 # plt.show()
 
