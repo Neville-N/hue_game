@@ -7,7 +7,13 @@ import time
 
 
 class Shapes:
-    def __init__(self, img: cv2.Mat, puzzleId: str = "_", search_neighbours=False):
+    def __init__(
+        self,
+        img: cv2.Mat,
+        puzzleId: str = "_",
+        search_neighbours=False,
+        reduce_factor: int = 1,
+    ):
         colors, minFreq = of.collectCollors(img)
 
         self.all: list[Shape] = []
@@ -17,6 +23,7 @@ class Shapes:
         self.imgref = img
         self.img = np.zeros_like(img)
         self.voronoi_img = np.zeros_like(img)
+        self.reduce_factor = reduce_factor
 
         for i, c in enumerate(colors):
             shapeMask_raw = cv2.inRange(self.imgref, c, c)
@@ -46,7 +53,7 @@ class Shapes:
             outerContour = contours[maxi]
 
             locked = len(contours) > 1
-            shape = Shape(contours, outerContour, shapeMask, c, locked)
+            shape = Shape(contours, outerContour, shapeMask, c, locked, reduce_factor)
             self.all.append(shape)
             if locked:
                 self.locked.append(shape)
@@ -106,29 +113,25 @@ class Shapes:
         self.unlocked.remove(A)
         self.locked.append(A)
         self.updateImg()
-        if not A.same_as(B):
-            if dev is not None:
-                self.fysical_swap_swipe(A, B, dev)
-                time.sleep(0.2)
-
-    def fysical_swap(self, A: Shape, B: Shape, dev):
-        command = f"input tap {A.centerX} {A.centerY}"
-        print(command)
-        dev.shell(command)
-
-        command2 = f"input tap {B.centerX} {B.centerY}"
-        print(command2)
-        dev.shell(command2)
+        if not A.same_as(B) and dev is not None:
+            self.fysical_swap_swipe(A, B, dev)
+            time.sleep(0.05)
 
     def fysical_swap_swipe(self, A, B, dev):
-        command = f"input swipe {B.centerX} {B.centerY} {A.centerX} {A.centerY} 200"
-        print(command)
+        # command = f"input swipe {B.centerX} {B.centerY} {A.centerX} {A.centerY} 200"
+        # command = f"input draganddrop {B.centerX} {B.centerY} {A.centerX} {A.centerY} 200"
+        command = f"input tap {B.centerX} {B.centerY}"
+        # print(command)
+        dev.shell(command)
+        time.sleep(0.05)
+        command = f"input tap {A.centerX} {A.centerY}"
+        # print(command)
         dev.shell(command)
 
     def markSwappedShapes(self, A: Shape, B: Shape):
         self.img = cv2.arrowedLine(self.img, B.center, A.center, [0, 0, 0], 5)
 
-    def resetLocks(self):
+    def reset_locks(self):
         for s in self.all:
             s.locked = s.hardLocked
             if s.hardLocked:
@@ -247,3 +250,22 @@ class Shapes:
 
     def sort_all(self):
         self.all = sorted(self.all, key=lambda s: s.dim1)
+
+    def sort_unlocked(self):
+        # self.unlocked = sorted(self.unlocked, key=lambda s: s.dim1)
+        # self.unlocked = sorted(self.unlocked, key=lambda s: s.end_hsv_1d)
+        # self.unlocked = sorted(self.unlocked, key=lambda s: s.rgb_1d)
+        self.unlocked = sorted(self.unlocked, key=lambda s: s.dist_to_center, reverse=True)
+
+    def reset_colors(self):
+        for shape in self.all:
+            shape.end_color = shape.color.copy()
+            shape.color = shape.start_color.copy()
+
+    def find_shape_by_color(self, color):
+        colorA = np.array(color)
+        for s in self.all:
+            if np.all(np.equal(colorA, s.colorA)):
+                return s
+        print(f"shape not found with color {colorA}")
+        return None
