@@ -13,10 +13,13 @@ class Shape:
         mask: cv2.Mat,
         color,
         locked: bool,
+        reduce_factor: int = 1,
     ):
         self.allContours = allContours
         self.contour = contour
         self.color = [int(c) for c in color]
+        self.start_color = self.color.copy()
+        self.end_color = [0, 0, 0]
 
         self.locked: bool = locked
         self.hardLocked: Final = locked
@@ -28,9 +31,6 @@ class Shape:
         M = cv2.moments(contour)
         cx = int(M["m10"] / M["m00"])
         cy = int(M["m01"] / M["m00"])
-
-        # cx = cx - cx % 10
-        # cy = cy - cy % 10
 
         self.center = np.array([cx, cy]).astype(np.int32)
         self.area = cv2.contourArea(contour)
@@ -53,6 +53,24 @@ class Shape:
         return cv2.cvtColor(np.uint8([[self.color]]), cv2.COLOR_BGR2HSV)[0, 0, :]
 
     @property
+    def end_hsv(self):
+        return cv2.cvtColor(np.uint8([[self.end_color]]), cv2.COLOR_BGR2HSV_FULL)[
+            0, 0, :
+        ]
+
+    @property
+    def hsv_1d(self):
+        return np.dot(self.colorHsv, (np.array([256**1, 256**2, 256**0])))
+
+    @property
+    def end_hsv_1d(self):
+        # return np.dot(self.end_hsv, (np.array([256**0, 256**2, 256**2])))
+        return np.dot(
+            np.array([self.end_hsv[0], round(self.end_hsv[1] / 20), self.end_hsv[2]]),
+            np.array([256**1, 256**1.5, 256**0]),
+        )
+
+    @property
     def countLockedNeighbours(self):
         return sum([n.locked * 1 for n in self.neighbours])
 
@@ -66,7 +84,15 @@ class Shape:
 
     @property
     def dim1(self) -> int:
-        return self.centerY + 1000 * self.centerX
+        return self.centerY + self.centerX
+
+    @property
+    def rgb_1d(self) -> int:
+        return self.color[0] * 256**2 + self.color[1] * 256**1 + self.color[2]
+
+    @property
+    def dist_to_center(self) -> int:
+        return np.sum(np.square(np.array([540, 1200]) - self.center))
 
     def drawContour(self, img: cv2.Mat, thickness: int = 0, color=0):
         if thickness == 0:
@@ -147,7 +173,10 @@ class Shape:
                 check_locations = c + dirs
 
             for check_dir in check_locations:
-                check_dir_ = [min(height - 1, check_dir[1]), min(width - 1, check_dir[0])]
+                check_dir_ = [
+                    min(height - 1, check_dir[1]),
+                    min(width - 1, check_dir[0]),
+                ]
                 check_color = img[check_dir_[0], check_dir_[1]].tolist()
                 if check_color not in found_colors:
                     if str(check_color) not in count_colors.keys():

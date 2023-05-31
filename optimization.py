@@ -92,7 +92,7 @@ def optimization_strat(PUZZLE_ID: str, show_plot: bool, SAVE_IMAGES: bool = True
     refit = False
     while limit < 100:
         if limit % 10 == 0 or len(shapes.unlocked) == 0 or not somethingChanged:
-            shapes.resetLocks()
+            shapes.reset_locks()
             opt.determine_close_to_estimate(shapes)
             datas2, MGs, Cs = opt.fitSurface(shapes, order, False)
             opt.setShapeColorEstimations(shapes, Cs, order)

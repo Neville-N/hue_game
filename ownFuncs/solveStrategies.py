@@ -32,7 +32,7 @@ def solve2(shapes: Shapes, Npuzzle: str):
             print("new loop")
             loopcount += 1
             onlyCheckLocked = False
-            shapes.resetLocks()
+            shapes.reset_locks()
 
 
 def solve3(shapes: Shapes, Npuzzle: str):
