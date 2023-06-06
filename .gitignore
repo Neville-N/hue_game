@@ -166,3 +166,4 @@ data/*.gif
 data/voronoi*
 log.txt
 log*
+*screen.png
