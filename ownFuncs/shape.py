@@ -2,7 +2,7 @@ from __future__ import annotations
 import numpy as np
 import cv2
 import ownFuncs.funcs as of
-from typing import List, Final
+from typing import Final
 
 
 class Shape:
@@ -23,7 +23,6 @@ class Shape:
 
         self.locked: bool = locked
         self.hardLocked: Final = locked
-        self.neighbours: list[Shape] = []
 
         self.mask = mask
         self.cstring = of.arr_format(color)
@@ -33,6 +32,7 @@ class Shape:
         cy = int(M["m01"] / M["m00"])
 
         self.center = np.array([cx, cy]).astype(np.int32)
+        self.center2 = np.zeros(2)
         self.area = cv2.contourArea(contour)
         self.colorEst = np.zeros(3)
 
@@ -64,19 +64,11 @@ class Shape:
 
     @property
     def end_hsv_1d(self):
-        # return np.dot(self.end_hsv, (np.array([256**0, 256**2, 256**2])))
-        return np.dot(
-            np.array([self.end_hsv[0], round(self.end_hsv[1] / 20), self.end_hsv[2]]),
-            np.array([256**1, 256**1.5, 256**0]),
-        )
-
-    @property
-    def countLockedNeighbours(self):
-        return sum([n.locked * 1 for n in self.neighbours])
-
-    @property
-    def countUnlockedNeighbours(self):
-        return len(self.neighbours) - self.countLockedNeighbours
+        return self.end_hsv @ np.array([256**2, 256**1, 256**0])
+        # return np.dot(
+        #     np.array([self.end_hsv[0], round(self.end_hsv[1] / 20), self.end_hsv[2]]),
+        #     np.array([256**1, 256**1.5, 256**0]),
+        # )
 
     @property
     def distToEstimation(self) -> float:
@@ -88,11 +80,14 @@ class Shape:
 
     @property
     def rgb_1d(self) -> int:
-        return self.color[0] * 256**2 + self.color[1] * 256**1 + self.color[2]
+        # return self.color[0] * 256**2 + self.color[1] * 256**1 + self.color[2]
+        # return np.sum(self.color)
+        return np.sum(np.square(self.color))
 
     @property
-    def dist_to_center(self) -> int:
-        return np.sum(np.square(np.array([540, 1200]) - self.center))
+    def dist_to_center(self) -> float:
+        angle = np.angle(self.centerX + self.centerY*1j) / np.pi + 1.0
+        return round(np.sqrt(np.sum(np.square(self.center2)))) + angle
 
     def drawContour(self, img: cv2.Mat, thickness: int = 0, color=0):
         if thickness == 0:
@@ -137,71 +132,6 @@ class Shape:
 
         self.color, otherShape.color = otherShape.color, self.color
 
-    def findNeighbours(
-        self,
-        img: cv2.Mat,
-        shapes: List[Shape],
-        searchRadially: bool = True,
-        range: int = 10,
-    ):
-        """Determines what shapes are close enough to be listed as "Neighbours"
-
-        Args:
-            img (cv2.Mat): Image of the shapes
-            shapes (list[Shape]): List of all shapes which could be a neighbour.
-            searchRadially (bool, optional): Determines search strategy. If false,
-                cardinal directions will be used from the contour. Defaults to True.
-            range (int, optional): How far to look away from contour to hop over the black border.
-                Defaults to 10.
-        """
-
-        dirs = range * np.array([[-1, 0], [1, 0], [0, -1], [0, 1]], dtype=int)
-        found_colors = [self.color, [0, 0, 0]]
-        count_colors = {}
-        width = img.shape[1]
-        height = img.shape[0]
-
-        for c in self.contour:
-            c = c[0]
-
-            if searchRadially:
-                # check radial directions
-                dir = c - self.center
-                check_locations = [c + np.int32(range / np.linalg.norm(dir) * dir)]
-            else:
-                # check cardinal directions
-                check_locations = c + dirs
-
-            for check_dir in check_locations:
-                check_dir_ = [
-                    min(height - 1, check_dir[1]),
-                    min(width - 1, check_dir[0]),
-                ]
-                check_color = img[check_dir_[0], check_dir_[1]].tolist()
-                if check_color not in found_colors:
-                    if str(check_color) not in count_colors.keys():
-                        count_colors[str(check_color)] = 0
-                    count_colors[str(check_color)] += 1
-
-                    if count_colors[str(check_color)] > 10:
-                        found_colors.append(check_color)
-                        # found_shape = shapes[of.arr_format(check_color, '3')]
-                        found_shape = next(
-                            (s for s in shapes if s.color == check_color), None
-                        )
-                        self.neighbours.append(found_shape)
-
-    def drawNeighbours(self, img: cv2.Mat, color=[0, 255, 0], thickness=3):
-        """Mark the contours of neighbours of this cell. Can be used for easy debugging.
-
-        Args:
-            img (cv2.Mat): image to draw the contour on
-            color (tuple, optional): Drawn contour color. Defaults to (0, 255, 0).
-            thickness (int, optional): Thickness of drawn contour. Defaults to 3.
-        """
-        for n in self.neighbours:
-            n.drawContour(img, thickness=thickness, color=color)
-
     def RGB_distance(self, shape: Shape, colorA: np.ndarray = None) -> float:
         """Calculates euclidiean rgb distance between self and shape.
 
@@ -214,57 +144,6 @@ class Shape:
         if colorA is not None:
             return np.linalg.norm(self.colorA - colorA)
         return np.linalg.norm(self.colorA - shape.colorA)
-
-    def RGB2NeighboursDistance(self, shape: Shape, onlyCheckLocked: bool = True):
-        dist = 0
-        counted = 0
-        for n in self.neighbours:
-            if onlyCheckLocked and not n.locked:
-                continue
-            counted += 1
-            dist += shape.RGB_distance(n)
-        if counted == 0:
-            return np.inf
-        return dist / counted
-
-    def neighboursDistance(self, onlyCheckLocked: bool = False):
-        dist = 0
-        counted = 0
-        for n in self.neighbours:
-            if onlyCheckLocked and not n.locked:
-                continue
-            counted += 1
-            dist += self.RGB_distance(n)
-        if counted == 0:
-            return 0
-        return dist / counted
-
-    def findBestSwap(
-        self, shapes: list[Shape], distOnlyCheckLocked: bool = True
-    ) -> Shape:
-        """Finds other shape with color that would be best suited for this shape.
-        Determines fit by calculating average rgb distance to (locked) neighbouring cells
-
-        Args:
-            shapes (list[Shape]): Collection of potential shapes to swap colors with.
-            distOnlyCheckLocked (bool, optional): Determines if the distance of
-                non locked neighbours should be ignored. Defaults to True.
-
-        Returns:
-            Shape: Shape with color closest to neighbours
-        """
-        minDist = np.inf
-        closestShape = None
-        for swap_candidate in shapes:
-            if not self.checkSwappable(swap_candidate):
-                continue
-            rgb_dist = self.RGB2NeighboursDistance(swap_candidate, distOnlyCheckLocked)
-            if rgb_dist < minDist:
-                minDist = rgb_dist
-                closestShape = swap_candidate
-        if closestShape is None:
-            print("No closestshape found")
-        return closestShape
 
     def same_as(self, other: Shape) -> bool:
         return np.all(np.equal(self.colorA, other.colorA))
