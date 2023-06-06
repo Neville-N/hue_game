@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import os
+from shutil import rmtree
 
 
 def scaleImg(
@@ -36,12 +37,13 @@ def collectCollors(img: cv2.Mat):
     )
     sortInd = np.flip(np.argsort(freqs))
 
-    # sort by frequency high to low and leave out black
+    # sort by frequency high to low and leave out background
+    # it is assumed that the most common color is the background
     freqs = freqs[sortInd]
     colors = colors[sortInd]
-    if sum(colors[0]) == 0:
-        freqs = freqs[1:]
-        colors = colors[1:]
+    # if sum(colors[0]) == 0:
+    freqs = freqs[1:]
+    colors = colors[1:]
 
     # Only take colors that are at least 10% in size w.r.t largest color
     minFreq = freqs[0] / 10
@@ -55,6 +57,13 @@ def saveImg(img: cv2.Mat, dir: str, filename: str):
     if not os.path.isdir(dir):
         os.makedirs(dir)
     cv2.imwrite(dir + filename, img)
+
+
+def cleanDir(dir: str):
+    if os.path.isdir(dir):
+        rmtree(dir)
+    else:
+        os.makedirs(dir)
 
 
 def arr_format(arr, format=" "):

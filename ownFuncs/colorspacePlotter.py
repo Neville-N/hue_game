@@ -3,25 +3,19 @@ from ownFuncs.shape import Shape
 import numpy as np
 from matplotlib import use as matplotlib_use
 import matplotlib.tri as mtri
-# from mpl_toolkits.mplot3d import Axes3D
 
 matplotlib_use("TkAgg")
 
 
-def rgb_space_plot(Shapes: list[Shape], drawConnections=True, markerSize=20):
-    ax = plt.figure(figsize=(10, 10)).add_subplot(projection="3d")
-    for shape in Shapes:
-        # Draw connecting lines
-        if drawConnections:
-            for neighbour in shape.neighbours:
-                ax.plot(
-                    [shape.color[2], neighbour.color[2]],
-                    [shape.color[1], neighbour.color[1]],
-                    [shape.color[0], neighbour.color[0]],
-                    color="k",
-                    alpha=0.5,
-                )
+def show():
+    plt.show(block=True)
 
+
+def rgb_space_plot(Shapes: list[Shape], markerSize=20):
+    plt.ion()
+    plt.show()
+    ax = plt.figure(figsize=(12, 12)).add_subplot(projection="3d")
+    for shape in Shapes:
         # Draw dots for each shape
         ax.plot(
             shape.color[2],
@@ -44,10 +38,47 @@ def rgb_space_plot(Shapes: list[Shape], drawConnections=True, markerSize=20):
                 alpha=1,
                 ms=markerSize / 2,
             )
-
     ax.set_xlabel("Red")
     ax.set_ylabel("Green")
     ax.set_zlabel("Blue")
+
+    plt.tight_layout()
+    plt.draw()
+    plt.pause(1)
+
+
+def xy_rgb_space_plot(Shapes: list[Shape], markerSize=20, title="xy dots"):
+    plt.ion()
+    plt.show()
+    ax = plt.figure(figsize=(5, 8)).add_subplot()
+    for shape in Shapes:
+        # Draw dots for each shape
+        ax.plot(
+            shape.centerX,
+            shape.centerY,
+            marker="o",
+            color=np.flip(np.array(shape.color) / 255.0),
+            alpha=1,
+            ms=markerSize,
+        )
+
+        # Mark locked shapes
+        if shape.locked:
+            ax.plot(
+                shape.centerX,
+                shape.centerY,
+                marker="x",
+                color="black",
+                alpha=1,
+                ms=markerSize / 2,
+            )
+    ax.set_xlabel("X")
+    ax.set_ylabel("Y")
+    plt.title(title)
+    plt.axis("equal")
+    plt.tight_layout()
+    plt.draw()
+    plt.pause(1)
 
 
 def surface_plot(shapes: list[Shape]):

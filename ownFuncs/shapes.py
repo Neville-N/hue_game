@@ -23,6 +23,8 @@ class Shapes:
         self.img = np.zeros_like(img)
         self.voronoi_img = np.zeros_like(img)
         self.reduce_factor = reduce_factor
+        self.puzzleId = puzzleId
+        self.debugcounter = 0
 
         for i, c in enumerate(colors):
             shapeMask_raw = cv2.inRange(self.imgref, c, c)
@@ -40,12 +42,19 @@ class Shapes:
             )
 
             # Filter based on area again after dilation erosion process.
-            contourAreas = [cv2.contourArea(c) for c in contours]
+            contourAreas = [cv2.contourArea(cont) for cont in contours]
             if sum(contourAreas) < minFreq:
                 continue
 
             if len(contours) > 2:
-                print("Large amount of contours found for color")
+                print(f"Large ({len(contours)}) amount of contours found for color {c}")
+                self.updateImg()
+                of.saveImg(
+                    self.img,
+                    "data/debug_imgs/",
+                    f"N{self.debugcounter}.png",
+                )
+                self.debugcounter += 1
                 continue
 
             maxi = np.argmax(contourAreas)
@@ -103,14 +112,13 @@ class Shapes:
             self.fysical_swap_swipe(A, B, dev, sleep_time)
 
     def fysical_swap_swipe(self, A, B, dev, sleep_time):
-        time.sleep(sleep_time)
-        command = f"input tap {B.centerX} {B.centerY}"
-        # print(f"1: {command}")
-        dev.shell(command)
-        time.sleep(sleep_time)
-        command = f"input tap {A.centerX} {A.centerY}"
-        # print(f"2: {command}\n")
-        dev.shell(command)
+        Xs = [20, B.centerX, A.centerX]
+        Ys = [20, B.centerY, A.centerY]
+        for x, y in zip(Xs, Ys):
+            time.sleep(sleep_time)
+            command = f"input tap {x} {y}"
+            # print(f"1: {command}")
+            dev.shell(command)
 
     def markSwappedShapes(self, A: Shape, B: Shape):
         self.img = cv2.arrowedLine(self.img, B.center, A.center, [0, 0, 0], 5)

@@ -7,8 +7,14 @@ from matplotlib import use as matplotlib_use
 import ownFuncs.funcs as of
 import ownFuncs.optimizationFuncs as opt
 from ownFuncs.shapes import Shapes
+import ownFuncs.colorspacePlotter as csplt
 
 matplotlib_use("TkAgg")
+
+DEBUG = True
+if DEBUG:
+    of.cleanDir("data/solveanimation")
+    of.cleanDir("data/debug_imgs")
 
 logstr: str = ""
 log_file = open("log.txt", "w")
@@ -58,27 +64,22 @@ def optimization_strat(PUZZLE_ID: str, show_plot: bool, SAVE_IMAGES: bool = True
     opt.setShapeColorEstimations(shapes, Cs, order)
 
     stepcount: int = -1
-    num_free_shapes = len(shapes.unlocked)
-    remaining_color_est_error = 0
 
     while len(shapes.unlocked) > 1:
         stepcount += 1
         shape = max(shapes.unlocked, key=lambda s: s.distToEstimation)
         BGR = opt.color_at_xy(Cs, shape.centerX, shape.centerY, order)
-        closestShape, err = shapes.findShapeClosestToColor(BGR, shape)
-        remaining_color_est_error += err
+        closestShape, _ = shapes.findShapeClosestToColor(BGR, shape)
         shapes.swapShapes(shape, closestShape)
         # if not np.all(np.equal(shape.colorA, closestShape.colorA)):
         if not shape.same_as(closestShape) and SAVE_IMAGES:
             shapes.markSwappedShapes(shape, closestShape)
             of.saveImg(
                 shapes.img,
-                f"data/solveanimation/P{PUZZLE_ID}/",
-                f"step_{stepcount}.png",
+                "data/solveanimation/",
+                f"order1_{stepcount}.png",
             )
-    log(
-        f"1st avg remaining color error: {remaining_color_est_error/num_free_shapes:.5g}"
-    )
+        log(f"1st avg remaining color error: {shapes.average_estimation_error:.5g}")
     XYB, XYG, XYR = opt.get_datas(shapes)
     datas2 = np.array([XYB, XYG, XYR])
 
@@ -90,7 +91,7 @@ def optimization_strat(PUZZLE_ID: str, show_plot: bool, SAVE_IMAGES: bool = True
     limit = 0
 
     refit = False
-    while limit < 100:
+    while limit < 2 * len(shapes.all):
         if limit % 10 == 0 or len(shapes.unlocked) == 0 or not somethingChanged:
             shapes.reset_locks()
             opt.determine_close_to_estimate(shapes)
@@ -119,22 +120,25 @@ def optimization_strat(PUZZLE_ID: str, show_plot: bool, SAVE_IMAGES: bool = True
             somethingChanged = True
             of.saveImg(
                 shapes.img,
-                f"data/solveanimation/P{PUZZLE_ID}/",
-                f"step_{stepcount}.png",
+                "data/solveanimation/",
+                f"order2_{stepcount}.png",
             )
 
-        avg_est_error = shapes.average_estimation_error
-
-        log(f"Average remaining color error: {avg_est_error:.5g}")
+        log(f"Average remaining color error: {shapes.average_estimation_error:.5g}")
         if somethingChanged and show_plot:
             XYB, XYG, XYR = opt.get_datas(shapes)
             datas2 = np.array([XYB, XYG, XYR])
             opt.plotSurfaces(datas, MGs, datas2)
 
+    if DEBUG:
+        XYB, XYG, XYR = opt.get_datas(shapes)
+        datas2 = np.array([XYB, XYG, XYR])
+        opt.plotSurfaces(datas, MGs, datas2)
+        csplt.rgb_space_plot(shapes.all, False)
+        plt.show()
+
     shapes.updateImg(False)
-    of.saveImg(
-        shapes.img, f"data/solveanimation/P{PUZZLE_ID}/", f"step_{stepcount}.png"
-    )
+    of.saveImg(shapes.img, "data/solveanimation/", f"step_{stepcount}.png")
 
     log(f"P{PUZZLE_ID} Ran order two loop for {limit} times")
 
