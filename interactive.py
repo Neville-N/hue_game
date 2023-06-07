@@ -126,15 +126,11 @@ shapes.sort_unlocked()
 stepcount = -1
 conv_hull_first = None
 
-
-# shape = min(shapes.unlocked, key=lambda s: s.tapX + s.tapY)
 while len(shapes.unlocked) > 1 and stepcount < 2 * len(shapes.all):
     largestShapes = shapes.get_largest_shapes()
     shape = min(largestShapes, key=lambda s: s.tapX + s.tapY)
     while len(largestShapes) > 0:
-        print(f"len(largestshapes) = {len(largestShapes)}")
         shape = shapes.next_convex_hull_shape(shape, largestShapes)
-        print(f"area of current shape= {shape.area}")
         stepcount += 1
         swap_shape = shapes.find_shape_by_color(shape.end_color)
         if swap_shape is not None:
@@ -154,8 +150,6 @@ while len(shapes.unlocked) > 1 and stepcount < 2 * len(shapes.all):
                 "data/solveanimation/",
                 f"step_{stepcount}.png",
             )
-    # last_large_shape = largestShapes.pop()
-    # shapes.swapShapes(last_large_shape, last_large_shape)
 
 if DEBUG:
     shapes.updateImg(False)

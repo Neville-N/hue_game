@@ -321,10 +321,13 @@ class Shapes:
         largest: Shape = self.unlocked[0]
         retlist: list[Shape] = [largest]
         for i in range(1, len(self.unlocked)):
-            print(f"search largest area, current: {self.unlocked[i].area}")
-            print(f"fraction of largest = {self.unlocked[i].area / largest.area}")
+            shapeSimilarity = cv2.matchShapes(
+                self.unlocked[i].contour, largest.contour, 1, 0
+            )
+            # print(shapeSimilarity)
+            if shapeSimilarity > 0.1:
+                continue
             if self.unlocked[i].area / largest.area < 0.9:
-                print(f"break for loop at {i}")
                 break
             retlist.append(self.unlocked[i])
         return retlist
