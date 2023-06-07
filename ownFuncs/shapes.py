@@ -106,6 +106,7 @@ class Shapes:
     def swapShapes(self, A: Shape, B: Shape, dev=None, sleep_time=0.05):
         A.swap(B)
         A.locked = True
+        # if A in self.unlocked:
         self.unlocked.remove(A)
         self.locked.append(A)
         self.updateImg()
@@ -240,7 +241,7 @@ class Shapes:
 
     def sort_unlocked(self):
         # self.unlocked = sorted(self.unlocked, key=lambda s: s.dim1)
-        self.unlocked = sorted(self.unlocked, key=lambda s: s.end_hsv_1d, reverse=True)
+        self.unlocked.sort(key=lambda s: s.end_hsv_1d, reverse=True)
         # self.unlocked = sorted(self.unlocked, key=lambda s: s.rgb_1d)
 
         # self.unlocked = sorted(
@@ -299,9 +300,13 @@ class Shapes:
         else:
             return 2
 
-    def next_convex_hull_shape(self, shapeA: Shape):
-        most_clockwise = self.unlocked[0]
-        for shapeB in self.unlocked:
+    def next_convex_hull_shape(
+        self, shapeA: Shape, shapelist: list[Shape] = None
+    ) -> Shape:
+        if not shapelist:
+            shapelist = self.unlocked
+        most_clockwise = shapelist[0]
+        for shapeB in shapelist:
             if shapeA.same_as(shapeB):
                 continue
             orient = self.orientation(shapeA, shapeB, most_clockwise)
@@ -310,3 +315,16 @@ class Shapes:
 
         self.convex_hull.append(most_clockwise.Center)
         return most_clockwise
+
+    def get_largest_shapes(self):
+        self.unlocked.sort(key=lambda s: s.area, reverse=True)
+        largest: Shape = self.unlocked[0]
+        retlist: list[Shape] = [largest]
+        for i in range(1, len(self.unlocked)):
+            print(f"search largest area, current: {self.unlocked[i].area}")
+            print(f"fraction of largest = {self.unlocked[i].area / largest.area}")
+            if self.unlocked[i].area / largest.area < 0.9:
+                print(f"break for loop at {i}")
+                break
+            retlist.append(self.unlocked[i])
+        return retlist
