@@ -126,7 +126,12 @@ class Shape:
         areaCheck = 0.9 < areaRatio and areaRatio < 1.1
         if verbose and not areaCheck:
             print(f"performing illegal swap, area ratio is {areaRatio}")
-        return areaCheck
+
+        shapeSimil = self.shapeSimilarity(otherShape)
+        shapeCheck = shapeSimil < 0.1
+        if verbose and not shapeCheck:
+            print(f"performing illegal swap, shape similarity is {shapeSimil}")
+        return areaCheck and shapeCheck
 
     def swap(self, otherShape: Shape):
         """Swaps color between this and other shape.
@@ -157,3 +162,15 @@ class Shape:
 
     def same_as(self, other: Shape) -> bool:
         return np.all(np.equal(self.colorA, other.colorA))
+
+    def shapeSimilarity(self, other: Shape) -> float:
+        """calculates shapesimilarity between contour of this and other shape
+
+        Args:
+            other (Shape): Shape object to be compared against
+
+        Returns:
+            float: value between 0 and 1. 0 means exactly the same shape.
+        """
+        similarity = cv2.matchShapes(self.contour, other.contour, 1, 0)
+        return similarity

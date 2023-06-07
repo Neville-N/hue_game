@@ -26,10 +26,11 @@ fp.close()
 PUZZLE_ID = "screen"
 
 img = cv2.imread(src)
-img = of.scaleImg(img, 0.5)
+scaler = 0.5
+img = of.scaleImg(img, scaler)
 assert img is not None, "file could not be read"
 
-shapes = Shapes(img, PUZZLE_ID, reduce_factor=0.5)
+shapes = Shapes(img, PUZZLE_ID, reduce_factor=scaler)
 print(
     f"solving puzzle with {len(shapes.all)} shapes of which {len(shapes.unlocked)} are unlocked"
 )
@@ -121,14 +122,13 @@ if CSPLOT:
 
 shapes.reset_locks()
 shapes.reset_colors()
-shapes.sort_unlocked()
 
 stepcount = -1
 conv_hull_first = None
 
 while len(shapes.unlocked) > 1 and stepcount < 2 * len(shapes.all):
     largestShapes = shapes.get_largest_shapes()
-    shape = min(largestShapes, key=lambda s: s.tapX + s.tapY)
+    shape = min(largestShapes, key=lambda s: s.tapX)
     while len(largestShapes) > 0:
         shape = shapes.next_convex_hull_shape(shape, largestShapes)
         stepcount += 1

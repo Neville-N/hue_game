@@ -37,6 +37,7 @@ class Shapes:
             dilated = cv2.dilate(shapeMask_raw, kernel, iterations=1)
             eroded = cv2.erode(dilated, kernel, iterations=2)
             shapeMask = cv2.dilate(eroded, kernel, iterations=1)
+            # shapeMask = shapeMask_raw
 
             contours, hierarchy = cv2.findContours(
                 shapeMask, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE
@@ -301,7 +302,9 @@ class Shapes:
             return 2
 
     def next_convex_hull_shape(
-        self, shapeA: Shape, shapelist: list[Shape] = None
+        self,
+        shapeA: Shape,
+        shapelist: list[Shape] = None,
     ) -> Shape:
         if not shapelist:
             shapelist = self.unlocked
@@ -312,20 +315,33 @@ class Shapes:
             orient = self.orientation(shapeA, shapeB, most_clockwise)
             if orient == 2:
                 most_clockwise = shapeB
+        
+        # best_option = most_clockwise
+        best_option = self.check_better_hull_options(shapeA, most_clockwise, shapelist)
+        self.convex_hull.append(best_option.Center)
+        return best_option
 
-        self.convex_hull.append(most_clockwise.Center)
-        return most_clockwise
+    def check_better_hull_options(
+        self,
+        prevShape: Shape,
+        foundShape: Shape,
+        shapelist: list[Shape],
+    ):
+        close_to_line: list[Shape] = [foundShape]
+        for s in shapelist:
+            if s.same_as(prevShape) or s.same_as(foundShape):
+                continue
+            if of.point_line_dist(s.tapXY, prevShape.tapXY, foundShape.tapXY) < 10:
+                close_to_line.append(s)
+        close_to_line.sort(key=lambda s: s.dist2shape(prevShape))
+        return close_to_line[0]
 
     def get_largest_shapes(self):
         self.unlocked.sort(key=lambda s: s.area, reverse=True)
         largest: Shape = self.unlocked[0]
         retlist: list[Shape] = [largest]
         for i in range(1, len(self.unlocked)):
-            shapeSimilarity = cv2.matchShapes(
-                self.unlocked[i].contour, largest.contour, 1, 0
-            )
-            # print(shapeSimilarity)
-            if shapeSimilarity > 0.1:
+            if self.unlocked[i].shapeSimilarity(largest) > 0.1:
                 continue
             if self.unlocked[i].area / largest.area < 0.9:
                 break

@@ -21,19 +21,19 @@ def rgb_space_plot(Shapes: list[Shape], markerSize=20, space="rgb", title="rgb p
     for shape in Shapes:
         if space.lower() == "rgb":
             location = shape.color
-            ax.set_xlabel("Red")
-            ax.set_ylabel("Green")
-            ax.set_zlabel("Blue")
-        if space.lower() == "hsv":
-            location = shape.colorHsv
-            ax.set_xlabel("Hue")
-            ax.set_ylabel("Saturation")
-            ax.set_zlabel("Value")
         if space.lower() == "lab":
             location = shape.colorLab
-            ax.set_xlabel("Lightness")
-            ax.set_ylabel("A")
-            ax.set_zlabel("B")
+        if space.lower() == "hsv":
+            location = shape.colorHsv
+            ax.plot(
+                location[2],
+                location[1],
+                location[0] + 255,
+                marker="o",
+                color=np.flip(np.array(shape.color) / 255.0),
+                alpha=1,
+                ms=markerSize,
+            )
 
         # Draw dots for each shape
         ax.plot(
@@ -57,6 +57,19 @@ def rgb_space_plot(Shapes: list[Shape], markerSize=20, space="rgb", title="rgb p
                 alpha=1,
                 ms=markerSize / 2,
             )
+
+    if space.lower() == "rgb":
+        ax.set_xlabel("Red")
+        ax.set_ylabel("Green")
+        ax.set_zlabel("Blue")
+    if space.lower() == "hsv":
+        ax.set_xlabel("Value")
+        ax.set_ylabel("Saturation")
+        ax.set_zlabel("Hue")
+    if space.lower() == "lab":
+        ax.set_xlabel("B")
+        ax.set_ylabel("A")
+        ax.set_zlabel("Lightness")
 
     plt.title(title)
     plt.tight_layout()
@@ -89,8 +102,9 @@ def xy_rgb_space_plot(Shapes: list[Shape], markerSize=20, title="xy dots"):
             )
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
+    plt.grid()
     plt.title(title)
-    plt.axis("equal")
+    # plt.axis("equal")
     plt.tight_layout()
     plt.draw()
     plt.pause(1)

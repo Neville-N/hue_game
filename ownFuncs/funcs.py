@@ -86,3 +86,15 @@ def arr2_format(arr, format=" "):
             ret += ",\n"
     ret += "]"
     return ret
+
+
+def point_line_dist(P0, P1, P2) -> float:
+    """Calculate distance between point P0 and a line passing through P1 and P2
+
+    Returns:
+        float: distance
+    """
+    dist = abs(
+        (P2[0] - P1[0]) * (P1[1] - P0[1]) - (P1[0] - P0[0]) * (P2[1] - P1[1])
+    ) / np.sqrt((P2[0] - P1[0]) ** 2 + (P2[1] - P1[1]) ** 2)
+    return dist
