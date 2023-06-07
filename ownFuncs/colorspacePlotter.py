@@ -11,16 +11,35 @@ def show():
     plt.show(block=True)
 
 
-def rgb_space_plot(Shapes: list[Shape], markerSize=20):
+def ionshow():
     plt.ion()
     plt.show()
+
+
+def rgb_space_plot(Shapes: list[Shape], markerSize=20, space="rgb", title="rgb plot"):
     ax = plt.figure(figsize=(12, 12)).add_subplot(projection="3d")
     for shape in Shapes:
+        if space.lower() == "rgb":
+            location = shape.color
+            ax.set_xlabel("Red")
+            ax.set_ylabel("Green")
+            ax.set_zlabel("Blue")
+        if space.lower() == "hsv":
+            location = shape.colorHsv
+            ax.set_xlabel("Hue")
+            ax.set_ylabel("Saturation")
+            ax.set_zlabel("Value")
+        if space.lower() == "lab":
+            location = shape.colorLab
+            ax.set_xlabel("Lightness")
+            ax.set_ylabel("A")
+            ax.set_zlabel("B")
+
         # Draw dots for each shape
         ax.plot(
-            shape.color[2],
-            shape.color[1],
-            shape.color[0],
+            location[2],
+            location[1],
+            location[0],
             marker="o",
             color=np.flip(np.array(shape.color) / 255.0),
             alpha=1,
@@ -30,32 +49,28 @@ def rgb_space_plot(Shapes: list[Shape], markerSize=20):
         # Mark locked shapes
         if shape.locked:
             ax.plot(
-                shape.color[2],
-                shape.color[1],
-                shape.color[0],
+                location[2],
+                location[1],
+                location[0],
                 marker="x",
                 color="black",
                 alpha=1,
                 ms=markerSize / 2,
             )
-    ax.set_xlabel("Red")
-    ax.set_ylabel("Green")
-    ax.set_zlabel("Blue")
 
+    plt.title(title)
     plt.tight_layout()
     plt.draw()
     plt.pause(1)
 
 
 def xy_rgb_space_plot(Shapes: list[Shape], markerSize=20, title="xy dots"):
-    plt.ion()
-    plt.show()
     ax = plt.figure(figsize=(5, 8)).add_subplot()
     for shape in Shapes:
         # Draw dots for each shape
         ax.plot(
-            shape.centerX,
-            shape.centerY,
+            shape.tapX,
+            shape.tapY,
             marker="o",
             color=np.flip(np.array(shape.color) / 255.0),
             alpha=1,
@@ -63,10 +78,10 @@ def xy_rgb_space_plot(Shapes: list[Shape], markerSize=20, title="xy dots"):
         )
 
         # Mark locked shapes
-        if shape.locked:
+        if shape.hardLocked:
             ax.plot(
-                shape.centerX,
-                shape.centerY,
+                shape.tapX,
+                shape.tapY,
                 marker="x",
                 color="black",
                 alpha=1,
@@ -82,8 +97,8 @@ def xy_rgb_space_plot(Shapes: list[Shape], markerSize=20, title="xy dots"):
 
 
 def surface_plot(shapes: list[Shape]):
-    X = [s.centerX for s in shapes]
-    Y = [s.centerY for s in shapes]
+    X = [s.tapX for s in shapes]
+    Y = [s.tapY for s in shapes]
     R = [s.color[2] for s in shapes]
     G = [s.color[1] for s in shapes]
     B = [s.color[0] for s in shapes]
@@ -111,8 +126,8 @@ def surface_plot(shapes: list[Shape]):
 
 
 def surfacePlot2(shapes: list[Shape]):
-    X = np.array([s.centerX for s in shapes])
-    Y = np.array([s.centerY for s in shapes])
+    X = np.array([s.tapX for s in shapes])
+    Y = np.array([s.tapY for s in shapes])
     R = np.array([s.color[2] for s in shapes])
     G = np.array([s.color[1] for s in shapes])
     B = np.array([s.color[0] for s in shapes])
@@ -139,8 +154,8 @@ def surfacePlot2(shapes: list[Shape]):
         for s in shapes:
             if s.hardLocked:
                 ax.plot(
-                    s.centerX,
-                    s.centerY,
+                    s.tapX,
+                    s.tapY,
                     s.color[2 - i],
                     marker="o",
                     markersize=20,

@@ -5,8 +5,8 @@ import ownFuncs.optimizationFuncs as opt
 from ownFuncs.shapes import Shapes
 import ownFuncs.colorspacePlotter as csplt
 
-DEBUG = False
-CSPLOT = False
+DEBUG = 1
+CSPLOT = 0
 
 if DEBUG:
     of.cleanDir("data/solveanimation")
@@ -26,15 +26,19 @@ fp.close()
 PUZZLE_ID = "screen"
 
 img = cv2.imread(src)
+img = of.scaleImg(img, 0.5)
 assert img is not None, "file could not be read"
 
-shapes = Shapes(img, PUZZLE_ID)
+shapes = Shapes(img, PUZZLE_ID, reduce_factor=0.5)
 print(
     f"solving puzzle with {len(shapes.all)} shapes of which {len(shapes.unlocked)} are unlocked"
 )
 
 if CSPLOT:
+    csplt.ionshow()
     csplt.rgb_space_plot(shapes.all)
+    csplt.rgb_space_plot(shapes.all, space="HSV", title="HSV plot")
+    csplt.rgb_space_plot(shapes.all, space="LAB", title="LAB plot")
     csplt.xy_rgb_space_plot(shapes.all, title="Before ordening")
 
 order: int = 1
@@ -48,7 +52,7 @@ remaining_color_est_error = 0
 while len(shapes.unlocked) > 1 and True:
     stepcount += 1
     shape = max(shapes.unlocked, key=lambda s: s.distToEstimation)
-    BGR = opt.color_at_xy(Cs, shape.centerX, shape.centerY, order)
+    BGR = opt.color_at_xy(Cs, shape.tapX, shape.tapY, order)
     closestShape, err = shapes.findShapeClosestToColor(BGR, shape)
     remaining_color_est_error += err
     shapes.swapShapes(shape, closestShape)
@@ -79,7 +83,7 @@ while limit < 2 * len(shapes.all) and True:
     stepcount += 1
 
     shape = opt.get_largest_error_shape(shapes.unlocked)
-    BGR = opt.color_at_xy(Cs, shape.centerX, shape.centerY, order)
+    BGR = opt.color_at_xy(Cs, shape.tapX, shape.tapY, order)
     closestShape, err = shapes.findShapeClosestToColor(BGR, shape)
     shapes.swapShapes(shape, closestShape)
 
@@ -91,15 +95,17 @@ while limit < 2 * len(shapes.all) and True:
             of.saveImg(shapes.img, "data/solveanimation/", f"order2_{stepcount}.png")
 
 
-shapes.updateImg(False)
 if DEBUG:
+    shapes.updateImg(False)
     of.saveImg(shapes.img, "data/solveanimation/", f"end1_{stepcount}.png")
     shapes.draw_voronoi(draw_lines=True, draw_centroids=True)
     of.saveImg(shapes.voronoi_img, "data/voronoi/", f"P{PUZZLE_ID}.png")
 
+if CSPLOT:
+    shapes.reset_locks()
+    csplt.xy_rgb_space_plot(shapes.all, title="After ordening")
+    csplt.show()
 
-shapes.reset_colors()
-shapes.reset_locks()
 
 # shapes.define_new_centers()
 # counter = 0
@@ -113,22 +119,29 @@ shapes.reset_locks()
 # shapes.make_symmetric_x()
 # shapes.make_symmetric_y()
 
+shapes.reset_locks()
+shapes.reset_colors()
 shapes.sort_unlocked()
 
 stepcount = -1
+conv_hull_first = None
+
+shape = min(shapes.unlocked, key=lambda s: s.tapX+s.tapY)
 while len(shapes.unlocked) > 1 and stepcount < 2 * len(shapes.all):
-    shape = shapes.unlocked[0]
+    # shape = shapes.unlocked[0]
+    shape = shapes.next_convex_hull_shape(shape)
     stepcount += 1
     swap_shape = shapes.find_shape_by_color(shape.end_color)
     if swap_shape is not None:
         if not shape.same_as(swap_shape):
-            shapes.swapShapes(shape, swap_shape, device, 0.02)
+            shapes.swapShapes(shape, swap_shape, device, 0.01)
         else:
             # mark as locked but dont fysically swap
             shapes.swapShapes(shape, swap_shape)
 
     if DEBUG:
         shapes.markSwappedShapes(shape, swap_shape)
+        shapes.draw_convex_hull()
         of.saveImg(
             shapes.img,
             "data/solveanimation/",
@@ -137,9 +150,5 @@ while len(shapes.unlocked) > 1 and stepcount < 2 * len(shapes.all):
 
 if DEBUG:
     shapes.updateImg(False)
+    shapes.draw_convex_hull()
     of.saveImg(shapes.img, "data/solveanimation/", f"end2_{stepcount}.png")
-
-if CSPLOT:
-    shapes.reset_locks()
-    csplt.xy_rgb_space_plot(shapes.all, title="After ordening")
-    csplt.show()

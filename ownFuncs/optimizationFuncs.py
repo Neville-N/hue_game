@@ -117,9 +117,9 @@ def fitSurface(
         # shapeList = shapes.all
         shapeList = shapes.close_to_estimate
 
-    XYR = np.array([[s.centerX, s.centerY, s.color[2]] for s in shapeList])
-    XYG = np.array([[s.centerX, s.centerY, s.color[1]] for s in shapeList])
-    XYB = np.array([[s.centerX, s.centerY, s.color[0]] for s in shapeList])
+    XYR = np.array([[s.tapX, s.tapY, s.color[2]] for s in shapeList])
+    XYG = np.array([[s.tapX, s.tapY, s.color[1]] for s in shapeList])
+    XYB = np.array([[s.tapX, s.tapY, s.color[0]] for s in shapeList])
 
     datas = [XYB, XYG, XYR]
     Cs = [find_transform_matrix(d, order) for d in datas]
@@ -129,7 +129,7 @@ def fitSurface(
 
 def setShapeColorEstimations(shapes: Shapes, Cs: npt.NDArray, order: int):
     for shape in shapes.all:
-        shape.colorEst = color_at_xy(Cs, shape.centerX, shape.centerY, order)
+        shape.colorEst = color_at_xy(Cs, shape.tapX, shape.tapY, order)
 
 
 def determine_close_to_estimate(shapes: Shapes):
@@ -140,9 +140,9 @@ def determine_close_to_estimate(shapes: Shapes):
 
 
 def get_datas(shapes: Shapes):
-    XYB = [[shape.centerX, shape.centerY, shape.color[0]] for shape in shapes.all]
-    XYG = [[shape.centerX, shape.centerY, shape.color[1]] for shape in shapes.all]
-    XYR = [[shape.centerX, shape.centerY, shape.color[2]] for shape in shapes.all]
+    XYB = [[shape.tapX, shape.tapY, shape.color[0]] for shape in shapes.all]
+    XYG = [[shape.tapX, shape.tapY, shape.color[1]] for shape in shapes.all]
+    XYR = [[shape.tapX, shape.tapY, shape.color[2]] for shape in shapes.all]
     return XYB, XYG, XYR
 
 

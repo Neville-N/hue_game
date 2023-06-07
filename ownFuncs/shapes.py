@@ -11,7 +11,7 @@ class Shapes:
         self,
         img: cv2.Mat,
         puzzleId: str = "_",
-        reduce_factor: int = 1,
+        reduce_factor: float = 1,
     ):
         colors, minFreq = of.collectCollors(img)
 
@@ -25,12 +25,13 @@ class Shapes:
         self.reduce_factor = reduce_factor
         self.puzzleId = puzzleId
         self.debugcounter = 0
+        self.convex_hull = []
 
         for i, c in enumerate(colors):
             shapeMask_raw = cv2.inRange(self.imgref, c, c)
 
             kernel = np.ones((3, 3), np.uint8)
-            if max(self.imgref.shape) > 800:
+            if max(self.imgref.shape) > 1200:
                 kernel = np.ones((5, 5), np.uint8)
 
             dilated = cv2.dilate(shapeMask_raw, kernel, iterations=1)
@@ -76,16 +77,16 @@ class Shapes:
         return sum([s.distToEstimation for s in self.all]) / len(self.all)
 
     @property
-    def center_points(self):
-        return [s.center for s in self.all]
+    def tap_points(self):
+        return [s.tap for s in self.all]
 
     @property
-    def centerX(self):
-        return [s.centerX for s in self.all]
+    def tapX(self):
+        return [s.tapX for s in self.all]
 
     @property
-    def centerY(self):
-        return [s.centerY for s in self.all]
+    def tapY(self):
+        return [s.tapY for s in self.all]
 
     @property
     def centerX2(self):
@@ -112,16 +113,16 @@ class Shapes:
             self.fysical_swap_swipe(A, B, dev, sleep_time)
 
     def fysical_swap_swipe(self, A, B, dev, sleep_time):
-        Xs = [20, B.centerX, A.centerX]
-        Ys = [20, B.centerY, A.centerY]
-        for x, y in zip(Xs, Ys):
+        Xs = [20, B.tapX, A.tapX]
+        Ys = [20, B.tapY, A.tapY]
+        for x, y, i in zip(Xs, Ys, range(len(Xs))):
             time.sleep(sleep_time)
             command = f"input tap {x} {y}"
-            # print(f"1: {command}")
+            # print(f"{i}: {command}")
             dev.shell(command)
 
     def markSwappedShapes(self, A: Shape, B: Shape):
-        self.img = cv2.arrowedLine(self.img, B.center, A.center, [0, 0, 0], 5)
+        self.img = cv2.arrowedLine(self.img, B.Center, A.Center, [0, 0, 0], 5)
 
     def reset_locks(self):
         for s in self.all:
@@ -148,19 +149,15 @@ class Shapes:
         # mindist = closestShape.RGB_distance(None, BGR)
         return closestShape, mindist
 
-    def draw_voronoi(self, f=1, draw_lines=True, draw_centroids=False):
+    def draw_voronoi(self, draw_lines=True, draw_centroids=False):
         size = self.img.shape
+        # print(f"size = {size}")
         rect = (0, 0, size[1], size[0])
         subdiv = cv2.Subdiv2D(rect)
         for s in self.all:
-            cx = s.centerX
-            cy = s.centerY
-            # cx -= cx % f
-            # cy -= cy % f
-            cx = f * round(cx / f)
-            cy = f * round(cy / f)
-
-            subdiv.insert((int(cx), int(cy)))
+            p = (int(s.centerX), int(s.centerY))
+            # print(f"draw voronoi inserted value: {p}")
+            subdiv.insert(p)
 
         vp.draw_voronoi(self.voronoi_img, subdiv, self, draw_lines, draw_centroids)
 
@@ -177,7 +174,6 @@ class Shapes:
                 self.move_shapes_x(unique_x[i + 1], to_x)
                 changed = True
         unique_x, freq_x = np.unique(self.centerX2, return_counts=True)
-        # print(f"after X  {unique_x}")
         return changed
 
     def snape_to_grid_y(self):
@@ -273,3 +269,44 @@ class Shapes:
 
         for shape in self.all:
             shape.center2 = avg_xy - shape.center
+
+    def draw_convex_hull(self):
+        for i in range(1, len(self.convex_hull)):
+            cv2.line(
+                self.img,
+                self.convex_hull[i - 1],
+                self.convex_hull[i],
+                color=(0, 255, 0),
+                thickness=3,
+                lineType=cv2.LINE_AA,
+            )
+
+    def orientation(self, P: Shape, Q: Shape, R: Shape) -> int:
+        """To find orientation of ordered triplet (p, q, r).
+        The function returns following values
+        0 --> p, q and r are colinear
+        1 --> Clockwise
+        2 --> Counterclockwise
+        """
+        p = P.tapXY
+        q = Q.tapXY
+        r = R.tapXY
+        val = (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1])
+        if val == 0:
+            return 0
+        if val > 0:
+            return 1
+        else:
+            return 2
+
+    def next_convex_hull_shape(self, shapeA: Shape):
+        most_clockwise = self.unlocked[0]
+        for shapeB in self.unlocked:
+            if shapeA.same_as(shapeB):
+                continue
+            orient = self.orientation(shapeA, shapeB, most_clockwise)
+            if orient == 2:
+                most_clockwise = shapeB
+
+        self.convex_hull.append(most_clockwise.Center)
+        return most_clockwise

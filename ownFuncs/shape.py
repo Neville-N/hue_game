@@ -13,7 +13,7 @@ class Shape:
         mask: cv2.Mat,
         color,
         locked: bool,
-        reduce_factor: int = 1,
+        reduce_factor: float = 1,
     ):
         self.allContours = allContours
         self.contour = contour
@@ -28,21 +28,24 @@ class Shape:
         self.cstring = of.arr_format(color)
 
         M = cv2.moments(contour)
-        cx = int(M["m10"] / M["m00"])
-        cy = int(M["m01"] / M["m00"])
+        self.centerX = int(M["m10"] / M["m00"])
+        self.centerY = int(M["m01"] / M["m00"])
+        self.tapX = int(M["m10"] / M["m00"] / reduce_factor)
+        self.tapY = int(M["m01"] / M["m00"] / reduce_factor)
 
-        self.center = np.array([cx, cy]).astype(np.int32)
+        self.tapXY = np.array([self.tapX, self.tapY]).astype(np.int32)
+        self.Center = np.array([self.centerX, self.centerY]).astype(np.int32)
         self.center2 = np.zeros(2)
         self.area = cv2.contourArea(contour)
         self.colorEst = np.zeros(3)
 
-    @property
-    def centerX(self):
-        return self.center[0]
+    # @property
+    # def centerX(self):
+    #     return self.center[0]
 
-    @property
-    def centerY(self):
-        return self.center[1]
+    # @property
+    # def centerY(self):
+    #     return self.center[1]
 
     @property
     def colorA(self):
@@ -50,7 +53,11 @@ class Shape:
 
     @property
     def colorHsv(self):
-        return cv2.cvtColor(np.uint8([[self.color]]), cv2.COLOR_BGR2HSV)[0, 0, :]
+        return cv2.cvtColor(np.uint8([[self.color]]), cv2.COLOR_BGR2HSV_FULL)[0, 0, :]
+
+    @property
+    def colorLab(self):
+        return cv2.cvtColor(np.uint8([[self.color]]), cv2.COLOR_BGR2LAB)[0, 0, :]
 
     @property
     def end_hsv(self):
@@ -60,15 +67,11 @@ class Shape:
 
     @property
     def hsv_1d(self):
-        return np.dot(self.colorHsv, (np.array([256**1, 256**2, 256**0])))
+        return self.colorHsv @ np.array([256**1, 256**2, 256**0])
 
     @property
     def end_hsv_1d(self):
-        return self.end_hsv @ np.array([256**2, 256**1, 256**0])
-        # return np.dot(
-        #     np.array([self.end_hsv[0], round(self.end_hsv[1] / 20), self.end_hsv[2]]),
-        #     np.array([256**1, 256**1.5, 256**0]),
-        # )
+        return self.end_hsv[0] * self.end_hsv[1]
 
     @property
     def distToEstimation(self) -> float:
@@ -86,8 +89,10 @@ class Shape:
 
     @property
     def dist_to_center(self) -> float:
-        angle = np.angle(self.centerX + self.centerY*1j) / np.pi + 1.0
-        return round(np.sqrt(np.sum(np.square(self.center2)))) + angle
+        return round(np.sqrt(np.sum(np.square(self.center2))))
+
+    def dist2shape(self, other: Shape) -> float:
+        return np.linalg.norm(self.tapXY - other.tapXY)
 
     def drawContour(self, img: cv2.Mat, thickness: int = 0, color=0):
         if thickness == 0:
@@ -95,13 +100,18 @@ class Shape:
         if color == 0:
             color = self.color
         cv2.drawContours(
-            img, self.allContours, contourIdx=-1, color=color, thickness=thickness
+            img,
+            self.allContours,
+            contourIdx=-1,
+            color=color,
+            thickness=thickness,
+            lineType=cv2.LINE_AA,
         )
 
     def drawCentroid(self, img, size=8, col=[0, 0, 255]):
         if self.locked and col == [0, 0, 255]:
             col = [0, 255, 0]
-        cv2.circle(img, self.center, size, col, -1, cv2.LINE_AA)
+        cv2.circle(img, self.Center, size, col, -1, cv2.LINE_AA)
 
     def checkSwappable(self, otherShape: Shape, verbose: bool = False) -> bool:
         """Determines if a swap is allowable between self and otherShape
