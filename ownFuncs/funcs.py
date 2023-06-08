@@ -98,3 +98,19 @@ def point_line_dist(P0, P1, P2) -> float:
         (P2[0] - P1[0]) * (P1[1] - P0[1]) - (P1[0] - P0[0]) * (P2[1] - P1[1])
     ) / np.sqrt((P2[0] - P1[0]) ** 2 + (P2[1] - P1[1]) ** 2)
     return dist
+
+
+def orientation(P, Q, R) -> int:
+    """To find orientation of ordered triplet (p, q, r).
+    The function returns following values
+    0 --> p, q and r are colinear
+    1 --> Clockwise
+    2 --> Counterclockwise
+    """
+    val = (Q[1] - P[1]) * (R[0] - Q[0]) - (Q[0] - P[0]) * (R[1] - Q[1])
+    if val == 0:
+        return 0
+    if val > 0:
+        return 1
+    else:
+        return 2

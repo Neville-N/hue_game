@@ -5,7 +5,7 @@ import ownFuncs.optimizationFuncs as opt
 from ownFuncs.shapes import Shapes
 import ownFuncs.colorspacePlotter as csplt
 
-DEBUG = 1
+DEBUG = 0
 CSPLOT = 0
 
 if DEBUG:
@@ -107,19 +107,6 @@ if CSPLOT:
     csplt.xy_rgb_space_plot(shapes.all, title="After ordening")
     csplt.show()
 
-
-# shapes.define_new_centers()
-# counter = 0
-# while shapes.snape_to_grid_x() and counter < 20:
-#     counter += 1
-#     pass
-# counter = 0
-# while shapes.snape_to_grid_y() and counter < 20:
-#     counter += 1
-#     pass
-# shapes.make_symmetric_x()
-# shapes.make_symmetric_y()
-
 shapes.reset_locks()
 shapes.reset_colors()
 
@@ -128,6 +115,7 @@ conv_hull_first = None
 
 while len(shapes.unlocked) > 1 and stepcount < 2 * len(shapes.all):
     largestShapes = shapes.get_largest_shapes()
+    # largestShapes = shapes.unlocked
     shape = min(largestShapes, key=lambda s: s.tapX)
     while len(largestShapes) > 0:
         shape = shapes.next_convex_hull_shape(shape, largestShapes)
@@ -140,7 +128,8 @@ while len(shapes.unlocked) > 1 and stepcount < 2 * len(shapes.all):
                 # mark as locked but dont fysically swap
                 shapes.swapShapes(shape, swap_shape)
 
-        largestShapes.remove(shape)
+        if shape in largestShapes:
+            largestShapes.remove(shape)
 
         if DEBUG:
             shapes.markSwappedShapes(shape, swap_shape)

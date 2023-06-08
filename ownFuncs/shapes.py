@@ -283,24 +283,6 @@ class Shapes:
                 lineType=cv2.LINE_AA,
             )
 
-    def orientation(self, P: Shape, Q: Shape, R: Shape) -> int:
-        """To find orientation of ordered triplet (p, q, r).
-        The function returns following values
-        0 --> p, q and r are colinear
-        1 --> Clockwise
-        2 --> Counterclockwise
-        """
-        p = P.tapXY
-        q = Q.tapXY
-        r = R.tapXY
-        val = (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1])
-        if val == 0:
-            return 0
-        if val > 0:
-            return 1
-        else:
-            return 2
-
     def next_convex_hull_shape(
         self,
         shapeA: Shape,
@@ -312,10 +294,10 @@ class Shapes:
         for shapeB in shapelist:
             if shapeA.same_as(shapeB):
                 continue
-            orient = self.orientation(shapeA, shapeB, most_clockwise)
+            orient = of.orientation(shapeA.tapXY, shapeB.tapXY, most_clockwise.tapXY)
             if orient == 2:
                 most_clockwise = shapeB
-        
+
         # best_option = most_clockwise
         best_option = self.check_better_hull_options(shapeA, most_clockwise, shapelist)
         self.convex_hull.append(best_option.Center)
@@ -331,10 +313,9 @@ class Shapes:
         for s in shapelist:
             if s.same_as(prevShape) or s.same_as(foundShape):
                 continue
-            if of.point_line_dist(s.tapXY, prevShape.tapXY, foundShape.tapXY) < 10:
+            if of.point_line_dist(s.tapXY, prevShape.tapXY, foundShape.tapXY) < 30:
                 close_to_line.append(s)
-        close_to_line.sort(key=lambda s: s.dist2shape(prevShape))
-        return close_to_line[0]
+        return min(close_to_line, key=lambda s: s.dist2shape(prevShape))
 
     def get_largest_shapes(self):
         self.unlocked.sort(key=lambda s: s.area, reverse=True)
