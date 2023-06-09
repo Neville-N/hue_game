@@ -2,18 +2,43 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def calcAngle(a, b, c, limit=True):
-    ab = a - b
-    cb = c - b
-    ca = c - a
-    ba = b - a
-    bIsRightOfac = ca[0] * ba[1] - ca[1] * ba[0] < 0
-    angle = np.arccos(ab @ cb / (np.linalg.norm(ab) * np.linalg.norm(cb)))
+def calcAngle(a, b, c, limit=False) -> float:
+    bIsRightOfac = pointRightOfLine(a, b, c)
+    angle = smallAngle(a - b, c - b)
     if bIsRightOfac:
         angle = 2 * np.pi - angle
-    if limit and angle > 1.1*np.pi:
-        return 0
+    if limit and angle > np.pi + 0.5:
+        return 0.0
     return angle
+
+
+def smallAngle(v1, v2) -> float:
+    """Calculate the smaller angle between vector v1 and v2
+
+    Args:
+        v1 (NDarray): xy vector
+        v2 (NDarray): xy vector
+
+    Returns:
+        float : Angle between v1 and v2
+    """
+    return np.arccos(v1 @ v2 / (np.linalg.norm(v1) * np.linalg.norm(v2)))
+
+
+def pointRightOfLine(a, b, c):
+    """Determines wether point c is on the right of line through a and b
+
+    Args:
+        a (NDarray): x,y coordinate of point
+        b (NDarray): x,y coordinate of point
+        c (NDarray): x,y coordinate of point
+
+    Returns:
+        bool: False if point is exactly on or to the left of line, else True
+    """
+    ca = c - a
+    ba = b - a
+    return ca[0] * ba[1] - ca[1] * ba[0] < 0
 
 
 def point_line_dist(P0, P1, P2) -> float:
@@ -28,6 +53,23 @@ def point_line_dist(P0, P1, P2) -> float:
     return dist
 
 
+def pointClose2Line(A, B, C, angle_tol=0.1) -> bool:
+    """Tests wether point C is close to line segment AB
+
+    Args:
+        A (NDarray): point coordinates
+        B (NDarray): point coordinates
+        C (NDarray): point coordinates
+
+    Returns:
+        bool: Returns True if point C is close to AB
+    """
+    distAB = point_dist(A, B)
+    if point_dist(A, C) > distAB or point_dist(B, C) > distAB:
+        return False
+    return smallAngle(A - B, C - B) < angle_tol
+
+
 def point_dist(P0, P1) -> float:
     """Calculate the distance betwoon two points
 
@@ -37,8 +79,8 @@ def point_dist(P0, P1) -> float:
     return np.linalg.norm(P0 - P1)
 
 
-rng = np.random.default_rng(123)
-N = 20
+rng = np.random.default_rng(1234)
+N = 30
 points = rng.random((N, 2))
 indices = list(range(N))
 
@@ -66,48 +108,33 @@ convex_hull_arr = np.array(convex_hull)
 # reset some vars and start looking for concave hull
 indices = list(range(N))
 indices.remove(leftindex)
-pointA = leftpoint - np.array([0, 1])
+pointA = np.array([0, 0])
 pointB = leftpoint
 concave_hull.append(pointB)
 
 # find concave hull
 while len(indices) > 1:
-    option1 = max(indices, key=lambda pi: calcAngle(pointA, pointB, points[pi]))
+    option1 = max(
+        indices, key=lambda pi: calcAngle(pointA, pointB, points[pi], limit=False)
+    )
     pointC = points[option1]
     winnerangle = calcAngle(pointA, pointB, pointC)
-    indices.remove(option1)
 
     # print(pointA, pointB, pointC)
     option2 = -1
-    distance = np.inf
+    angle = np.inf
     distBC = point_dist(pointB, pointC)
     for i in indices:
-        pi = points[i]
-        if i == option1:
-            print("i is same as option1")
-            continue
-        if np.all(np.equal(pointB, pi)):
-            print("i is same as pointB")
-            continue
-        if np.all(np.equal(pointC, pi)):
-            print("i is same as pointC")
-            continue
-        if point_dist(pointB, pi) > distBC:
-            # print(f"({pi[0]:.3f}, {pi[1]:.3f}) too far from B")
-            continue
-        if point_dist(pointC, pi) > distBC:
-            # print(f"({pi[0]:.3f}, {pi[1]:.3f}) too far from C")
-            continue
-
-        dist_test = point_line_dist(pi, pointB, pointC)
-        if dist_test <= distance:
-            distance = dist_test
+        angle_test = smallAngle(pointB - pointC, points[i] - pointC)
+        if angle_test <= angle and pointClose2Line(pointB, pointC, points[i]):
+            angle = angle_test
             option2 = i
 
-    if distance < 0.03:
-        indices.append(option1)
+    if option2 > 0:
         indices.remove(option2)
         pointC = points[option2]
+    else:
+        indices.remove(option1)
 
     print(f"pointA : ({pointA[0]:<#8.3g}, {pointA[1]:<#8.3g})")
     print(f"pointB : ({pointB[0]:<#8.3g}, {pointB[1]:<#8.3g})")
@@ -115,9 +142,12 @@ while len(indices) > 1:
         f"option1: ({points[option1][0]:<#8.3g}, {points[option1][1]:<#8.3g}) angle: {180*winnerangle/np.pi:.3g}"
     )
     if option2 >= 0:
-        print(
-            f"option2: ({points[option2][0]:<#8.3g}, {points[option2][1]:<#8.3g}) dist : {distance:.3g}"
-        )
+        printstr = "option2: "
+        printstr += f"({points[option2][0]:<#8.3g}, {points[option2][1]:<#8.3g}) "
+        printstr += f"dist: {point_line_dist(pointB, points[option1], pointC):<#8.3g} "
+        printstr += f"angle : {180/np.pi*angle:.3g} deg "
+        printstr += f"or {angle:.3g} rad"
+        print(printstr)
     else:
         print("No valid option 2 found")
     print(f"pointC : ({pointC[0]:<#8.3g}, {pointC[1]:<#8.3g})\n")
@@ -129,7 +159,7 @@ while len(indices) > 1:
     # else:
     pointA, pointB = pointB, pointC
 
-# concave_hull.append(points[indices[0]])
+concave_hull.append(points[indices[0]])
 concave_hull_arr = np.array(concave_hull)
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 8))
