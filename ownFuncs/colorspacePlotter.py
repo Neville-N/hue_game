@@ -139,7 +139,7 @@ def surface_plot(shapes: list[Shape]):
     plt.show()
 
 
-def surfacePlot2(shapes: list[Shape]):
+def surfacePlot2(shapes: list[Shape], saveFig=False, step=0, plot2d=True):
     X = np.array([s.tapX for s in shapes])
     Y = np.array([s.tapY for s in shapes])
     R = np.array([s.color[2] for s in shapes])
@@ -148,39 +148,50 @@ def surfacePlot2(shapes: list[Shape]):
 
     triang = mtri.Triangulation(X, Y)
 
-    fig = plt.figure(figsize=(40, 15))
-    # ax = fig.add_subplot(1, 2, 1)
-
-    # ax.triplot(triang_r, c="#D3D3D3", marker='.', markerfacecolor="#DC143C",
-    #            markeredgecolor="black", markersize=10)
-
-    # ax.set_xlabel('X')
-    # ax.set_ylabel('Y')
+    if plot2d:
+        fig, axs = plt.subplots(1, 3, sharey=True, figsize=(26, 10))
+    else:
+        fig = plt.figure(figsize=(10, 6))
     labels = ["R", "G", "B"]
     cmaps = ["Reds", "Greens", "Blues"]
+
     for Z, l, cmap, i in zip([R, G, B], labels, cmaps, range(3)):
-        ax = fig.add_subplot(1, 3, i + 1, projection="3d")
+        if plot2d:
+            ax = axs[i]
+            cnt = ax.tricontourf(triang, Z, cmap=cmap, levels=np.arange(0, 256, 16))
+            fig.colorbar(cnt, ax=ax)
+            ax.scatter(X, Y, marker=".", s=10, c="black", alpha=0.5)
+            ax.axis("equal")
 
-        ax.plot_trisurf(triang, Z, cmap=cmap)
-        ax.scatter(X, Y, Z, marker=".", s=10, c="black", alpha=0.5)
-        ax.view_init(elev=60, azim=-45)
+        else:
+            ax = fig.add_subplot(1, 3, i + 1, projection="3d")
+            # ax.plot_trisurf(triang, Z, cmap=cmap)
+            ax.tricontourf(triang, Z, cmap=cmap, levels=30)
+            ax.scatter(X, Y, Z, marker=".", s=10, c="black", alpha=0.5)
+            # ax.view_init(elev=60, azim=-45)
 
-        for s in shapes:
-            if s.hardLocked:
-                ax.plot(
-                    s.tapX,
-                    s.tapY,
-                    s.color[2 - i],
-                    marker="o",
-                    markersize=20,
-                    color="magenta",
-                )
+            for s in shapes:
+                if s.hardLocked:
+                    ax.plot(
+                        s.tapX,
+                        s.tapY,
+                        s.color[2 - i],
+                        marker="o",
+                        markersize=20,
+                        color="magenta",
+                    )
+            ax.set_zlabel(l)
 
         ax.set_xlabel("X")
         ax.set_ylabel("Y")
-        ax.set_zlabel(l)
 
-    plt.show()
+    plt.tight_layout()
+
+    if saveFig:
+        plt.savefig(f"data/plots/step_{step}.png")
+        plt.close()
+    else:
+        plt.show()
 
 
 def set_axes_equal(ax):

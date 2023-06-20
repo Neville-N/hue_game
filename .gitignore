@@ -168,3 +168,5 @@ log.txt
 log*
 *screen.png
 debug_imgs/
+data/plots/
+data/gradImg*

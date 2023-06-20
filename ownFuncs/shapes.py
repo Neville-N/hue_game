@@ -12,6 +12,7 @@ class Shapes:
         img: cv2.Mat,
         puzzleId: str = "_",
         reduce_factor: float = 1,
+        debug: bool = False,
     ):
         colors, minFreq = of.collectCollors(img)
 
@@ -51,12 +52,13 @@ class Shapes:
             if len(contours) > 2:
                 print(f"Large ({len(contours)}) amount of contours found for color {c}")
                 self.updateImg()
-                of.saveImg(
-                    self.img,
-                    "data/debug_imgs/",
-                    f"N{self.debugcounter}.png",
-                )
-                self.debugcounter += 1
+                if debug:
+                    of.saveImg(
+                        self.img,
+                        "data/debug_imgs/",
+                        f"N{self.debugcounter}.png",
+                    )
+                    self.debugcounter += 1
                 continue
 
             maxi = np.argmax(contourAreas)
@@ -290,6 +292,7 @@ class Shapes:
     ) -> Shape:
         if not shapelist:
             shapelist = self.unlocked
+
         most_clockwise = shapelist[0]
         for shapeB in shapelist:
             if shapeA.same_as(shapeB):
@@ -299,11 +302,11 @@ class Shapes:
                 most_clockwise = shapeB
 
         # best_option = most_clockwise
-        best_option = self.check_better_hull_options(shapeA, most_clockwise, shapelist)
+        best_option = self.check_concave_options(shapeA, most_clockwise, shapelist)
         self.convex_hull.append(best_option.Center)
         return best_option
 
-    def check_better_hull_options(
+    def check_concave_options(
         self,
         prevShape: Shape,
         foundShape: Shape,

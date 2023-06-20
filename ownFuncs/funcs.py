@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import os
 from shutil import rmtree
+from os import get_terminal_size
 
 
 def scaleImg(
@@ -62,8 +63,7 @@ def saveImg(img: cv2.Mat, dir: str, filename: str):
 def cleanDir(dir: str):
     if os.path.isdir(dir):
         rmtree(dir)
-    else:
-        os.makedirs(dir)
+    os.makedirs(dir)
 
 
 def arr_format(arr, format=" "):
@@ -114,3 +114,12 @@ def orientation(P, Q, R) -> int:
         return 1
     else:
         return 2
+
+
+def progress_print(current, goal, barWidth=None):
+    if not barWidth:
+        barWidth = get_terminal_size().columns
+    current = int(current * barWidth / goal)
+    goal = barWidth
+    remaining = goal - current
+    print(f"\r{'#'*current}{'-'*remaining}", end="", flush=True)
