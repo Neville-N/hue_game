@@ -92,7 +92,7 @@ if __name__ == "__main__":
     curTime = time.time()
     duration = curTime - prevTime
     prevTime = curTime
-    print(f"shapes detected in {duration:.4g}s")
+    print(f"shapes detected in {duration:.4g} s")
 
     print(
         f"Solving puzzle with {len(shapes.all)} shapes of which {len(shapes.unlocked)} are unlocked"
@@ -167,14 +167,14 @@ if __name__ == "__main__":
     curTime = time.time()
     duration = curTime - prevTime
     prevTime = curTime
-    print(f"puzzle positions found in {duration:.4g}s")
+    print(f"puzzle positions found in {duration:.4g} s")
 
     if args.gradientImg:
         opt.cvColGradient(shapes, mask=args.gradientImgNoMask)
         curTime = time.time()
         duration = curTime - prevTime
         prevTime = curTime
-        print(f"gradient made in {duration:.4g}s")
+        print(f"gradient made in {duration:.4g} s")
 
     if args.debug:
         shapes.updateImg(False)
@@ -235,7 +235,7 @@ if __name__ == "__main__":
     curTime = time.time()
     duration = curTime - prevTime
     prevTime = curTime
-    print(f"Pieces moved in {duration:.4g}s")
+    print(f"Pieces moved in {duration:.4g} s")
 
     if args.debug:
         shapes.updateImg(False)
@@ -244,4 +244,4 @@ if __name__ == "__main__":
 
     print("")
     duration = time.time() - startTime
-    print(f"Solved in {duration:.4g}s")
+    print(f"Solved in {duration:.4g} s")
