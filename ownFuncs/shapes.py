@@ -13,6 +13,7 @@ class Shapes:
         puzzleId: str = "_",
         reduce_factor: float = 1,
         debug: bool = False,
+        imperfectSrc: bool = True,
     ):
         colors, minFreq = of.collectCollors(img)
 
@@ -31,14 +32,16 @@ class Shapes:
         for i, c in enumerate(colors):
             shapeMask_raw = cv2.inRange(self.imgref, c, c)
 
-            kernel = np.ones((3, 3), np.uint8)
-            if max(self.imgref.shape) > 1200:
-                kernel = np.ones((5, 5), np.uint8)
+            if imperfectSrc:
+                kernel = np.ones((3, 3), np.uint8)
+                if max(self.imgref.shape) > 1200:
+                    kernel = np.ones((5, 5), np.uint8)
 
-            dilated = cv2.dilate(shapeMask_raw, kernel, iterations=1)
-            eroded = cv2.erode(dilated, kernel, iterations=2)
-            shapeMask = cv2.dilate(eroded, kernel, iterations=1)
-            # shapeMask = shapeMask_raw
+                dilated = cv2.dilate(shapeMask_raw, kernel, iterations=1)
+                eroded = cv2.erode(dilated, kernel, iterations=2)
+                shapeMask = cv2.dilate(eroded, kernel, iterations=1)
+            else:
+                shapeMask = shapeMask_raw
 
             contours, hierarchy = cv2.findContours(
                 shapeMask, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE
@@ -109,9 +112,9 @@ class Shapes:
     def swapShapes(self, A: Shape, B: Shape, dev=None, sleep_time=0.05):
         A.swap(B)
         A.locked = True
-        # if A in self.unlocked:
-        self.unlocked.remove(A)
-        self.locked.append(A)
+        if A in self.unlocked:
+            self.unlocked.remove(A)
+            self.locked.append(A)
         self.updateImg()
         if not A.same_as(B) and dev is not None:
             self.fysical_swap_swipe(A, B, dev, sleep_time)
