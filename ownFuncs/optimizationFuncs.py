@@ -155,7 +155,7 @@ def get_largest_error_shape(shapes: list[Shape]) -> Shape:
     return max(shapes, key=lambda s: s.distToEstimation)
 
 
-def cvColGradient(shapes: Shapes, order: int = 2, mask: bool = True):
+def cvColGradient(shapes: Shapes, order: int = 2, mask: bool = True, scale: int = 0.5):
     _, _, Cs = fitSurface(shapes, order, useLocked=False)
     imgsize = np.shape(shapes.imgref)
     height = imgsize[0]
@@ -169,11 +169,8 @@ def cvColGradient(shapes: Shapes, order: int = 2, mask: bool = True):
         for y in range(height):
             if mask and np.all(np.equal(shapes.imgref[y, x], [0, 0, 0])):
                 continue
-            BGR = color_at_xy(Cs, 2 * x, 2 * y, order)
+            BGR = color_at_xy(Cs, int(x / scale), int(y / scale), order)
             gradImg[y, x] = BGR
-            # gradImg_B[y, x] = BGR * np.array([1, 0, 0]).T
-            # gradImg_G[y, x] = BGR * np.array([0, 1, 0]).T
-            # gradImg_R[y, x] = BGR * np.array([0, 0, 1]).T
             gradImg_B[y, x] = BGR * np.array([1, 0, 0])
             gradImg_G[y, x] = BGR * np.array([0, 1, 0])
             gradImg_R[y, x] = BGR * np.array([0, 0, 1])
