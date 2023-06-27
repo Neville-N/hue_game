@@ -37,6 +37,13 @@ def parseArguments():
         default=0.01,
     )
     parser.add_argument(
+        "--scaler",
+        type=float,
+        help="Reduce image to fraction of original.\
+            With scaler < 0.5, process may become unreliable.",
+        default=0.5,
+    )
+    parser.add_argument(
         "--gradientImg",
         action="store_true",
         help="Creates interpolated gradient version of image. Takes a while to complete",
@@ -84,10 +91,16 @@ if __name__ == "__main__":
 
     img = cv2.imread(src)
     assert img is not None, "file could not be read"
-    scaler = 0.5
+    scaler = args.scaler
     img = of.scaleImg(img, scaler)
 
-    shapes = Shapes(img, PUZZLE_ID, reduce_factor=scaler, debug=args.debug)
+    shapes = Shapes(
+        img,
+        PUZZLE_ID,
+        reduce_factor=scaler,
+        debug=args.debug,
+        imperfectSrc=False,
+    )
 
     curTime = time.time()
     duration = curTime - prevTime
@@ -133,7 +146,7 @@ if __name__ == "__main__":
     limit = 0
 
     refit = False
-    while limit < 2 * len(shapes.all) and True:
+    while limit < 4 * len(shapes.all) and True:
         if limit % 10 == 0 or len(shapes.unlocked) == 0 or not somethingChanged:
             shapes.reset_locks()
             opt.determine_close_to_estimate(shapes)
@@ -170,7 +183,7 @@ if __name__ == "__main__":
     print(f"puzzle positions found in {duration:.4g} s")
 
     if args.gradientImg:
-        opt.cvColGradient(shapes, mask=args.gradientImgNoMask)
+        opt.cvColGradient(shapes, mask=args.gradientImgNoMask, scale=scaler)
         curTime = time.time()
         duration = curTime - prevTime
         prevTime = curTime
