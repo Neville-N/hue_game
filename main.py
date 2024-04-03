@@ -14,7 +14,7 @@ device = devices[0]
 PUZZLE_ID = "15"
 take_screencap = True
 grabSolved = False
-skipSwap = False
+skipSwap = True
 
 # load image
 if take_screencap:
@@ -34,12 +34,13 @@ img = cv2.imread(src)
 assert img is not None, "file could not be read, check with os.path.exists()"
 
 # Reduce image size to ease computations
-img = of.scaleImg(img, maxHeight=1000, maxWidth=3000)
+scaler = 0.5
+img = of.scaleImg(img, scaler)
 
 shapes = Shapes(img, PUZZLE_ID)
 
 print("Start swapping?")
-cv2.waitKey(1)
+cv2.imshow("0", shapes.img)
 
 # Pick strategy for solving puzzle
 if not skipSwap:

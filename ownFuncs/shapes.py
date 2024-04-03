@@ -13,7 +13,7 @@ class Shapes:
         puzzleId: str = "_",
         reduce_factor: float = 1,
         debug: bool = False,
-        imperfectSrc: bool = True,
+        perfectSrc: bool = False,
     ):
         colors, minFreq = of.collectCollors(img)
 
@@ -32,7 +32,7 @@ class Shapes:
         for i, c in enumerate(colors):
             shapeMask_raw = cv2.inRange(self.imgref, c, c)
 
-            if imperfectSrc:
+            if not perfectSrc:
                 kernel = np.ones((3, 3), np.uint8)
                 if max(self.imgref.shape) > 1200:
                     kernel = np.ones((5, 5), np.uint8)
@@ -59,8 +59,10 @@ class Shapes:
                     of.saveImg(
                         self.img,
                         "data/debug_imgs/",
-                        f"N{self.debugcounter}.png",
+                        f"N_{self.debugcounter}.png",
                     )
+                    problemImg = np.zeros_like(self.img)
+
                     self.debugcounter += 1
                 continue
 
@@ -323,14 +325,16 @@ class Shapes:
                 close_to_line.append(s)
         return min(close_to_line, key=lambda s: s.dist2shape(prevShape))
 
-    def get_largest_shapes(self):
-        self.unlocked.sort(key=lambda s: s.area, reverse=True)
+    def get_largest_shapes(self, largeToSmall=True):
+        self.unlocked.sort(key=lambda s: s.area, reverse=largeToSmall)
         largest: Shape = self.unlocked[0]
         retlist: list[Shape] = [largest]
         for i in range(1, len(self.unlocked)):
             if self.unlocked[i].shapeSimilarity(largest) > 0.1:
                 continue
-            if self.unlocked[i].area / largest.area < 0.9:
+            if largeToSmall and self.unlocked[i].area / largest.area < 0.9:
+                break
+            elif not largeToSmall and self.unlocked[i].area / largest.area > 1.1:
                 break
             retlist.append(self.unlocked[i])
         return retlist

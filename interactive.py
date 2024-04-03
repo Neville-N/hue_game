@@ -99,7 +99,7 @@ if __name__ == "__main__":
         PUZZLE_ID,
         reduce_factor=scaler,
         debug=args.debug,
-        imperfectSrc=False,
+        perfectSrc=False,
     )
 
     curTime = time.time()
@@ -120,6 +120,8 @@ if __name__ == "__main__":
         csplt.surfacePlot2(shapes.all)
 
     order: int = 1
+    if len(shapes.locked) > 10:
+        order = 2
     datas, MGs, Cs = opt.fitSurface(shapes, order)
     opt.setShapeColorEstimations(shapes, Cs, order)
 
@@ -127,7 +129,7 @@ if __name__ == "__main__":
     num_free_shapes = len(shapes.unlocked)
     remaining_color_est_error = 0
     if args.csplot:
-        opt.plotSurfaces(datas, MGs, saveFig=True, order=1, step=1)
+        opt.plotSurfaces(datas, MGs, saveFig=True, order=order, step=1)
 
     while len(shapes.unlocked) > 1 and True:
         stepcount += 1
@@ -177,6 +179,7 @@ if __name__ == "__main__":
                 of.saveImg(
                     shapes.img, "data/solveanimation/", f"order2_{stepcount}.png"
                 )
+
     curTime = time.time()
     duration = curTime - prevTime
     prevTime = curTime
@@ -213,11 +216,19 @@ if __name__ == "__main__":
         if args.notSolveByShape:
             shapeGroup = shapes.unlocked
         else:
-            shapeGroup = shapes.get_largest_shapes()
+            shapeGroup = shapes.get_largest_shapes(largeToSmall=True)
+            if args.fastMode:
+                shapeGroup.sort(key=lambda s: s.tapX)
+                while True:
+                    if shapeGroup[-1].tapX - 20 > shapeGroup[0].tapX:
+                        shapeGroup.pop()
+                    else:
+                        break
         shape = min(shapeGroup, key=lambda s: s.tapX)
         while len(shapeGroup) > 0:
             if args.fastMode:
-                shape = shapeGroup.pop()
+                # shape = shapeGroup[0]
+                shape = min(shapeGroup, key=lambda s: s.tapY)
             else:
                 shape = shapes.next_convex_hull_shape(shape, shapeGroup)
             stepcount += 1

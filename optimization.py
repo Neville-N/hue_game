@@ -12,6 +12,7 @@ import ownFuncs.colorspacePlotter as csplt
 matplotlib_use("TkAgg")
 
 DEBUG = True
+
 if DEBUG:
     of.cleanDir("data/solveanimation")
     of.cleanDir("data/debug_imgs")
@@ -28,79 +29,57 @@ def log(text: str):
     log_file.write(f"\n{text}")
 
 
-def optimization_strat(PUZZLE_ID: str, show_plot: bool, SAVE_IMAGES: bool = True):
+def optimization_strat(
+    PUZZLE_ID: str,
+    show_plot: bool,
+    SAVE_IMAGES: bool = True,
+    scaler: float = 0.5,
+):
     src = f"data/hue_scrambled_{PUZZLE_ID}.png"
     # src = f'data/hue_solved_{Npuzzle}.png'
     img = cv2.imread(src)
     assert img is not None, "file could not be read"
 
     # # Reduce image size to ease computations
-    # img = of.scaleImg(img, maxHeight=1000, maxWidth=3000)
+    img = of.scaleImg(img, scaler)
 
-    shapes = Shapes(img, PUZZLE_ID)
-
-    # cx_string = "\n"
-    # cx_string += "Before running\n"
-    # cx_string += f"centerX      : {of.arr_format(np.unique(shapes.centerX))}\n"
-    # dx = np.diff(np.unique(shapes.centerX))
-    # cx_string += f"diff(x)      : {of.arr_format(dx)}\n"
-    # dx2 = np.diff(np.unique(shapes.centerX), 2)
-    # cx_string += f"diff2(x)     : {of.arr_format(dx2)}\n"
-    # cx_string += f"uni_dx       : {of.arr_format(np.unique(dx))}\n"
-    # dx_unique_dx = np.diff(np.unique(dx))
-    # cx_string += f"diff(uni_dx) : {of.arr_format(dx_unique_dx)}\n"
-    # # fit shapes to grid
-    # while shapes.snape_to_grid_x():
-    #     pass
-
-    # while shapes.snape_to_grid_y():
-    #     pass
-    # shapes.make_symmetric_x()
-    # shapes.make_symmetric_y()
-    # shapes.sort_all()
+    shapes = Shapes(img, PUZZLE_ID, debug=DEBUG)
 
     order: int = 1
     datas, MGs, Cs = opt.fitSurface(shapes, order)
     opt.setShapeColorEstimations(shapes, Cs, order)
 
     stepcount: int = -1
+    num_free_shapes = len(shapes.unlocked)
+    remaining_color_est_error = 0
 
-    while len(shapes.unlocked) > 1:
+    while len(shapes.unlocked) > 1 and True:
         stepcount += 1
         shape = max(shapes.unlocked, key=lambda s: s.distToEstimation)
-        BGR = opt.color_at_xy(Cs, shape.centerX, shape.centerY, order)
-        closestShape, _ = shapes.findShapeClosestToColor(BGR, shape)
+        BGR = opt.color_at_xy(Cs, shape.tapX, shape.tapY, order)
+        closestShape, err = shapes.findShapeClosestToColor(BGR, shape)
+        remaining_color_est_error += err
         shapes.swapShapes(shape, closestShape)
-        # if not np.all(np.equal(shape.colorA, closestShape.colorA)):
-        if not shape.same_as(closestShape) and SAVE_IMAGES:
-            shapes.markSwappedShapes(shape, closestShape)
-            of.saveImg(
-                shapes.img,
-                "data/solveanimation/",
-                f"order1_{stepcount}.png",
-            )
-        log(f"1st avg remaining color error: {shapes.average_estimation_error:.5g}")
-    XYB, XYG, XYR = opt.get_datas(shapes)
-    datas2 = np.array([XYB, XYG, XYR])
 
-    if show_plot:
-        opt.plotSurfaces(datas, MGs, datas2)
+        if not shape.same_as(closestShape) and DEBUG:
+            shapes.markSwappedShapes(shape, closestShape)
+            of.saveImg(shapes.img, "data/solveanimation/", f"order1_{stepcount}.png")
+
+        log(f"1st avg remaining color error: {shapes.average_estimation_error:.5g}")
 
     order = 2
     somethingChanged = True
     limit = 0
 
     refit = False
-    while limit < 2 * len(shapes.all):
+    while limit < 4 * len(shapes.all) and True:
         if limit % 10 == 0 or len(shapes.unlocked) == 0 or not somethingChanged:
             shapes.reset_locks()
             opt.determine_close_to_estimate(shapes)
             datas2, MGs, Cs = opt.fitSurface(shapes, order, False)
             opt.setShapeColorEstimations(shapes, Cs, order)
             if refit:
-                log(f"refit break, avg err -> {shapes.average_estimation_error}")
                 break
-            log(f"{'-'*20} refit {'-'*20}")
             refit = True
         else:
             refit = False
@@ -110,25 +89,84 @@ def optimization_strat(PUZZLE_ID: str, show_plot: bool, SAVE_IMAGES: bool = True
         stepcount += 1
 
         shape = opt.get_largest_error_shape(shapes.unlocked)
-        BGR = opt.color_at_xy(Cs, shape.centerX, shape.centerY, order)
+        BGR = opt.color_at_xy(Cs, shape.tapX, shape.tapY, order)
         closestShape, err = shapes.findShapeClosestToColor(BGR, shape)
         shapes.swapShapes(shape, closestShape)
-        shapes.markSwappedShapes(shape, closestShape)
 
         # Check if shape has swapped with itself
-        if not shape.same_as(closestShape) and SAVE_IMAGES:
+        if not shape.same_as(closestShape):
             somethingChanged = True
-            of.saveImg(
-                shapes.img,
-                "data/solveanimation/",
-                f"order2_{stepcount}.png",
-            )
-
+            if DEBUG:
+                shapes.markSwappedShapes(shape, closestShape)
+                of.saveImg(
+                    shapes.img, "data/solveanimation/", f"order2_{stepcount}.png"
+                )
         log(f"Average remaining color error: {shapes.average_estimation_error:.5g}")
-        if somethingChanged and show_plot:
-            XYB, XYG, XYR = opt.get_datas(shapes)
-            datas2 = np.array([XYB, XYG, XYR])
-            opt.plotSurfaces(datas, MGs, datas2)
+
+    # while len(shapes.unlocked) > 1:
+    #     stepcount += 1
+    #     shape = max(shapes.unlocked, key=lambda s: s.distToEstimation)
+    #     BGR = opt.color_at_xy(Cs, shape.centerX, shape.centerY, order)
+    #     closestShape, _ = shapes.findShapeClosestToColor(BGR, shape)
+    #     shapes.swapShapes(shape, closestShape)
+    #     # if not np.all(np.equal(shape.colorA, closestShape.colorA)):
+    #     if not shape.same_as(closestShape) and SAVE_IMAGES:
+    #         shapes.markSwappedShapes(shape, closestShape)
+    #         of.saveImg(
+    #             shapes.img,
+    #             "data/solveanimation/",
+    #             f"order1_{stepcount}.png",
+    #         )
+    #     log(f"1st avg remaining color error: {shapes.average_estimation_error:.5g}")
+    # XYB, XYG, XYR = opt.get_datas(shapes)
+    # datas2 = np.array([XYB, XYG, XYR])
+
+    # if show_plot:
+    #     opt.plotSurfaces(datas, MGs, datas2)
+
+    # order = 2
+    # somethingChanged = True
+    # limit = 0
+
+    # refit = False
+    # while limit < 2 * len(shapes.all):
+    #     if limit % 10 == 0 or len(shapes.unlocked) == 0 or not somethingChanged:
+    #         shapes.reset_locks()
+    #         opt.determine_close_to_estimate(shapes)
+    #         datas2, MGs, Cs = opt.fitSurface(shapes, order, False)
+    #         opt.setShapeColorEstimations(shapes, Cs, order)
+    #         if refit:
+    #             log(f"refit break, avg err -> {shapes.average_estimation_error}")
+    #             break
+    #         log(f"{'-'*20} refit {'-'*20}")
+    #         refit = True
+    #     else:
+    #         refit = False
+
+    #     somethingChanged = False
+    #     limit += 1
+    #     stepcount += 1
+
+    #     shape = opt.get_largest_error_shape(shapes.unlocked)
+    #     BGR = opt.color_at_xy(Cs, shape.centerX, shape.centerY, order)
+    #     closestShape, err = shapes.findShapeClosestToColor(BGR, shape)
+    #     shapes.swapShapes(shape, closestShape)
+    #     shapes.markSwappedShapes(shape, closestShape)
+
+    #     # Check if shape has swapped with itself
+    #     if not shape.same_as(closestShape) and SAVE_IMAGES:
+    #         somethingChanged = True
+    #         of.saveImg(
+    #             shapes.img,
+    #             "data/solveanimation/",
+    #             f"order2_{stepcount}.png",
+    #         )
+
+    #     log(f"Average remaining color error: {shapes.average_estimation_error:.5g}")
+    #     if somethingChanged and show_plot:
+    #         XYB, XYG, XYR = opt.get_datas(shapes)
+    #         datas2 = np.array([XYB, XYG, XYR])
+    #         opt.plotSurfaces(datas, MGs, datas2)
 
     if DEBUG:
         XYB, XYG, XYR = opt.get_datas(shapes)
@@ -145,30 +183,6 @@ def optimization_strat(PUZZLE_ID: str, show_plot: bool, SAVE_IMAGES: bool = True
     if show_plot:
         plt.show()
 
-    # opt.plotSurfaces(datas, MGs, datas2)
-    # plt.show()
-
-    # while shapes.snape_to_grid_x():
-    #     pass
-
-    # while shapes.snape_to_grid_y():
-    #     pass
-
-    # shapes.make_symmetric_x()
-    # shapes.make_symmetric_y()
-    # shapes.sort_all()
-
-    # log(cx_string)
-    # log("After running")
-    # log(f"centerX      : {of.arr_format(np.unique(shapes.centerX))}")
-    # dx = np.diff(np.unique(shapes.centerX))
-    # log(f"diff(x)      : {of.arr_format(dx)}")
-    # dx2 = np.diff(np.unique(shapes.centerX), 2)
-    # log(f"diff2(x)     : {of.arr_format(dx2)}")
-    # log(f"uni_dx       : {of.arr_format(np.unique(dx))}")
-    # dx_unique_dx = np.diff(np.unique(dx))
-    # log(f"diff(uni_dx) : {of.arr_format(dx_unique_dx)}")
-
     shapes.draw_voronoi(draw_lines=True, draw_centroids=True)
     of.saveImg(shapes.voronoi_img, "data/voronoi/", f"P{PUZZLE_ID}.png")
 
@@ -179,7 +193,7 @@ def optimization_strat(PUZZLE_ID: str, show_plot: bool, SAVE_IMAGES: bool = True
 #     log("\n")
 
 
-optimization_strat("screen", False)
+optimization_strat("goes_wrong", False)
 
 # plt.show()
 
